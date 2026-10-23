@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; font-src 'self'" />
+  <title>Klip Downloader</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🎬</span>
+      <div>
+        <h1>Klip Downloader</h1>
+        <span class="sub" id="verBadge">v1.0.0</span>
+      </div>
+    </div>
+    <div class="top-right">
+      <span class="engine-badge" id="engineBadge" title="Versi engine yt-dlp">Engine: memuat…</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= SUMBER VIDEO ================= -->
+    <section class="card" id="cardSource">
+      <div class="card-head">
+        <h2>📥 Sumber Video</h2>
+        <span class="hint">YouTube · TikTok · Instagram · Facebook · X/Twitter · Vimeo · Google Drive &amp; 1000+ situs lain</span>
+      </div>
+
+      <div class="dl-row">
+        <input id="urlInput" type="text" spellcheck="false"
+               placeholder="Tempel URL video di sini, contoh: https://youtu.be/…" />
+        <button id="btnPaste" class="btn ghost" title="Tempel dari clipboard">📋 Tempel</button>
+        <button id="btnDownload" class="btn primary">⬇ Download</button>
+      </div>
+
+      <div class="opt-row">
+        <label class="opt">Kualitas
+          <select id="qualitySel">
+            <option value="best">Terbaik (otomatis)</option>
+            <option value="1080">≤ 1080p</option>
+            <option value="720">≤ 720p</option>
+            <option value="480">≤ 480p</option>
+            <option value="360">≤ 360p</option>
+          </select>
+        </label>
+        <button id="btnEngineUpdate" class="btn ghost small" title="Update engine yt-dlp ke versi terbaru">🛠 Update Engine</button>
+        <span class="spacer"></span>
+        <span class="folder-info" id="folderInfo" title="Folder hasil download">📁 …</span>
+        <button id="btnOpenFolder" class="btn ghost small">Buka Folder</button>
+      </div>
+
+      <div class="progress-wrap hidden" id="progressWrap">
+        <div class="progress-head">
+          <span id="progTitle" class="prog-title">Menyiapkan…</span>
+          <span id="progPct" class="prog-pct">0%</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+        <div class="progress-meta">
+          <span id="progSpeed">—</span>
+          <span id="progEta"></span>
+          <span class="spacer"></span>
+          <button id="btnCancel" class="btn danger small">✕ Batalkan</button>
+        </div>
+        <pre id="logBox" class="log hidden"></pre>
+      </div>
+
+      <div class="files">
+        <div class="files-head">
+          <h3>Hasil Download</h3>
+          <button id="btnRefresh" class="btn ghost small" title="Segarkan daftar">⟳ Segarkan</button>
+        </div>
+        <div id="fileList" class="file-list"></div>
+      </div>
+    </section>
+
+    <!-- ================= BROWSER ================= -->
+    <section class="card" id="cardBrowser">
+      <div class="card-head">
+        <h2>🌐 Browser</h2>
+        <span class="hint">Buka YouTube / situs mana pun — tonton langsung di sini, lalu unduh videonya</span>
+      </div>
+
+      <div class="nav-row">
+        <button id="btnBack" class="btn ghost icon" title="Kembali">←</button>
+        <button id="btnFwd" class="btn ghost icon" title="Maju">→</button>
+        <button id="btnReload" class="btn ghost icon" title="Muat ulang">⟳</button>
+        <button id="btnHome" class="btn ghost icon" title="Beranda (YouTube)">🏠</button>
+        <input id="addrInput" type="text" spellcheck="false"
+               placeholder="Ketik alamat website (mis. youtube.com) atau kata kunci pencarian…" />
+        <button id="btnGo" class="btn ghost">Muat</button>
+      </div>
+
+      <div class="web-wrap">
+        <div class="loadbar" id="loadBar"></div>
+        <webview id="browser" src="https://www.youtube.com" partition="persist:browser"></webview>
+      </div>
+
+      <div class="browser-actions">
+        <button id="btnUseUrl" class="btn primary">⬇ Gunakan URL Halaman Ini untuk Download</button>
+        <span id="detectChip" class="chip hidden">🎯 Video terdeteksi — URL otomatis terisi ke Sumber Video!</span>
+      </div>
+      <p class="tip">💡 Tips: bila YouTube meminta verifikasi/login saat download, login dulu ke YouTube lewat browser di atas, lalu coba download lagi — akunmu aman &amp; tersimpan hanya di aplikasi ini.</p>
+    </section>
+
+    <footer class="foot">
+      Klip Downloader v<span id="verFoot">1.0.0</span> — downloader video &amp; browser built-in. Hasil download tersimpan di folder
+      <b>Videos\Klip Downloader</b>. Semua proses berjalan lokal di komputarmu.
+    </footer>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

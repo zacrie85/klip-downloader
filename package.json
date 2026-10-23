@@ -1,0 +1,68 @@
+{
+  "name": "klip-downloader",
+  "productName": "Klip Downloader",
+  "version": "1.0.0",
+  "description": "Klip Downloader - Download video dari YouTube, TikTok, Instagram, Facebook, Google Drive & ribuan situs lain. Dilengkapi browser built-in. 100% lokal.",
+  "main": "main.js",
+  "author": "zacrie85",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "31.7.7",
+    "electron-builder": "24.13.3",
+    "resedit": "^3.1.0"
+  },
+  "build": {
+    "appId": "io.github.zacrie85.klipdownloader",
+    "productName": "Klip Downloader",
+    "copyright": "Copyright © 2026 zacrie85",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Klip-Downloader-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Klip Downloader",
+      "deleteAppDataOnUninstall": false
+    },
+    "compression": "maximum",
+    "afterPack": "scripts/afterpack.js"
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+tmp/
+*.log
+bin/*.exe
+bin/*.dll
+.DS_Store
