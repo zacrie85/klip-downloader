@@ -31,9 +31,10 @@
 
       <div class="dl-row">
         <input id="urlInput" type="text" spellcheck="false"
-               placeholder="Tempel URL video di sini, contoh: https://youtu.be/…" />
+               placeholder="Tempel URL video / playlist di sini, contoh: https://youtu.be/…" />
         <button id="btnPaste" class="btn ghost" title="Tempel dari clipboard">📋 Tempel</button>
-        <button id="btnDownload" class="btn primary">⬇ Download</button>
+        <button id="btnDownload" class="btn primary" title="Download video (MP4)">⬇ Video</button>
+        <button id="btnMp3" class="btn mp3" title="Download audio saja (MP3) — hemat kuota">🎵 MP3</button>
       </div>
 
       <div class="opt-row">
@@ -46,26 +47,26 @@
             <option value="360">≤ 360p</option>
           </select>
         </label>
+        <label class="opt chk" title="Simpan gambar cover video ( JPG)"><input type="checkbox" id="thumbChk" checked /> 🖼 Thumbnail</label>
+        <label class="opt">Paralel
+          <select id="parallelSel" title="Jumlah download yang berjalan bersamaan">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
         <button id="btnEngineUpdate" class="btn ghost small" title="Update engine yt-dlp ke versi terbaru">🛠 Update Engine</button>
         <span class="spacer"></span>
         <span class="folder-info" id="folderInfo" title="Folder hasil download">📁 …</span>
+        <button id="btnPickFolder" class="btn ghost small" title="Pilih folder lain untuk hasil download">Pilih Folder</button>
         <button id="btnOpenFolder" class="btn ghost small">Buka Folder</button>
       </div>
 
-      <div class="progress-wrap hidden" id="progressWrap">
-        <div class="progress-head">
-          <span id="progTitle" class="prog-title">Menyiapkan…</span>
-          <span id="progPct" class="prog-pct">0%</span>
-        </div>
-        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
-        <div class="progress-meta">
-          <span id="progSpeed">—</span>
-          <span id="progEta"></span>
-          <span class="spacer"></span>
-          <button id="btnCancel" class="btn danger small">✕ Batalkan</button>
-        </div>
-        <pre id="logBox" class="log hidden"></pre>
-      </div>
+      <div class="queue-line hidden" id="queueLine"></div>
+      <div class="active-list" id="activeList"></div>
+      <pre id="logBox" class="log hidden"></pre>
 
       <div class="files">
         <div class="files-head">

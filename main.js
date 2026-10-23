@@ -3,7 +3,7 @@
  * Downloader video + browser built-in. 100% lokal (tanpa server).
  * Author: zacrie85
  */
-const { app, BrowserWindow, ipcMain, shell, clipboard, Menu, session } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, clipboard, Menu, session, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -18,8 +18,18 @@ const SMOKE = process.env.KLIP_SMOKE === '1';
 let win = null;
 let dm = null;
 let outDir = null;
+let settings = {};
 let ytdlpPath = null;
 let ffmpegPath = null;
+
+// ---------- Settings (folder simpan tersimpan permanen) ----------
+function settingsPath() { return path.join(app.getPath('userData'), 'settings.json'); }
+function loadSettings() {
+  try { return JSON.parse(fs.readFileSync(settingsPath(), 'utf8')) || {}; } catch (e) { return {}; }
+}
+function saveSettings() {
+  try { fs.writeFileSync(settingsPath(), JSON.stringify(settings, null, 2), 'utf8'); } catch (e) {}
+}
 
 // ---------- Helpers ----------
 function resolveBin(...names) {
@@ -96,7 +106,17 @@ if (!gotLock) {
   app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
 
-    outDir = resolveOutDir();
+    settings = loadSettings();
+    // Folder tersimpan bila masih ada, kalau tidak pakai default Videos\Klip Downloader
+    let saved = (settings.outDir && typeof settings.outDir === 'string') ? settings.outDir : null;
+    if (saved) {
+      try {
+        fs.mkdirSync(saved, { recursive: true });
+        outDir = saved;
+      } catch (e) { saved = null; }
+    }
+    if (!saved) outDir = resolveOutDir();
+
     ytdlpPath = process.env.KLIP_YTDLP || resolveBin('yt-dlp.exe');
     ffmpegPath = process.env.KLIP_FFMPEG || resolveBin('ffmpeg.exe', 'ffmpeg');
 
@@ -180,6 +200,63 @@ app.on('web-contents-created', (ev, contents) => {
   }
 });
 
+// ---------- Playlist helpers ----------
+function isPlaylistUrl(u) {
+  // watch?v=... → selalu single video (walau ada &list=...)
+  if (/youtube\.com\/watch\?/i.test(u)) return false;
+  return (
+    /[?&]list=/i.test(u) ||
+    /youtube\.com\/playlist\?/i.test(u) ||
+    /youtube\.com\/channel\//i.test(u) ||
+    /youtube\.com\/@[\w.-]+(\/videos?)?\/?$/i.test(u)
+  );
+}
+
+function spawnEnv() {
+  return Object.assign({}, process.env, {
+    PATH: path.dirname(ytdlpPath) + path.delimiter + (process.env.PATH || '')
+  });
+}
+
+// Baca isi playlist (cepat, --flat-playlist, tanpa metadata detail)
+function expandPlaylist(url) {
+  return new Promise((resolve, reject) => {
+    const args = ['-J', '--flat-playlist', '--playlist-items', '1-200', url];
+    let out = '';
+    let err = '';
+    let proc;
+    try {
+      proc = spawn(ytdlpPath, args, { windowsHide: true, env: spawnEnv() });
+    } catch (e) { return reject(e); }
+    proc.stdout.on('data', (d) => { out += d.toString(); });
+    proc.stderr.on('data', (d) => { err += d.toString(); });
+    const to = setTimeout(() => {
+      try { proc.kill('SIGKILL'); } catch (e) {}
+      reject(new Error('timeout membaca playlist'));
+    }, 90000);
+    proc.on('error', (e) => { clearTimeout(to); reject(e); });
+    proc.on('close', () => {
+      clearTimeout(to);
+      try {
+        const j = JSON.parse(out);
+        if (j && j._type === 'playlist' && Array.isArray(j.entries)) {
+          const entries = j.entries
+            .filter((x) => x && (x.url || x.id))
+            .map((x) => ({
+              url: x.url || ('https://www.youtube.com/watch?v=' + x.id),
+              title: x.title || null
+            }));
+          resolve(entries);
+        } else {
+          resolve(null); // bukan playlist → diperlakukan single
+        }
+      } catch (e) {
+        reject(new Error((err.split('\n').filter(l => l.startsWith('ERROR:')).pop() || 'format playlist tidak dikenali').slice(0, 300)));
+      }
+    });
+  });
+}
+
 // ---------- IPC ----------
 function registerIpc() {
   ipcMain.handle('app:getInfo', () => ({
@@ -204,12 +281,43 @@ function registerIpc() {
     });
   });
 
-  ipcMain.handle('download:start', (e, url, quality) => {
-    if (!isValidHttpUrl(String(url || ''))) return { error: 'URL tidak valid. Contoh: https://youtu.be/xxxx' };
-    return dm.start(String(url), String(quality || 'best'));
+  ipcMain.handle('download:start', async (e, url, quality, opts = {}) => {
+    url = String(url || '');
+    if (!isValidHttpUrl(url)) return { error: 'URL tidak valid. Contoh: https://youtu.be/xxxx' };
+    const mode = opts && opts.mode === 'mp3' ? 'mp3' : 'video';
+    const thumb = !(opts && opts.thumb === false);
+
+    // Playlist → pecah jadi banyak download (antrean otomatis, paralel)
+    if (isPlaylistUrl(url)) {
+      send({ type: 'playlist-start', url });
+      try {
+        const entries = await expandPlaylist(url);
+        if (entries && entries.length) {
+          let added = 0;
+          for (const en of entries.slice(0, 200)) {
+            const r = dm.start(en.url, quality, { mode, title: en.title, thumb });
+            if (r && !r.error) added++;
+          }
+          send({ type: 'playlist-info', count: added });
+          return { playlist: true, count: added };
+        }
+        // bukan playlist → lanjut sebagai single
+      } catch (err) {
+        return { error: 'Gagal membaca playlist: ' + err.message };
+      }
+    }
+
+    return dm.start(url, quality, { mode, thumb });
   });
 
-  ipcMain.handle('download:cancel', () => dm.cancelCurrent());
+  ipcMain.handle('download:cancel', (e, id) => {
+    if (id) return dm.cancel(String(id));
+    return false;
+  });
+
+  ipcMain.handle('download:setConcurrent', (e, n) => {
+    return dm.setMaxConcurrent(n);
+  });
 
   ipcMain.handle('downloads:list', async () => {
     try {
@@ -233,6 +341,20 @@ function registerIpc() {
     return r || true;
   });
 
+  ipcMain.handle('downloads:chooseFolder', async () => {
+    const r = await dialog.showOpenDialog(win, {
+      title: 'Pilih folder hasil download',
+      defaultPath: outDir,
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (r.canceled || !r.filePaths.length) return { ok: false };
+    outDir = r.filePaths[0];
+    if (dm) dm.outDir = outDir;
+    settings.outDir = outDir;
+    saveSettings();
+    return { ok: true, outDir };
+  });
+
   ipcMain.handle('downloads:openFile', async (e, p) => {
     try {
       const rp = path.resolve(String(p));
@@ -248,7 +370,10 @@ function registerIpc() {
   });
 
   ipcMain.handle('engine:update', async () => {
-    if (dm.isBusy()) return { error: 'Tidak bisa update engine saat sedang ada download berjalan.' };
+    const st = dm.getStatus();
+    if (st.active > 0 || st.queued > 0) {
+      return { error: 'Tidak bisa update engine saat masih ada download berjalan/antre.' };
+    }
     return await new Promise((resolve) => {
       let out = '';
       let proc;

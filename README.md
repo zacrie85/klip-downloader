@@ -2,7 +2,7 @@
 
 **Downloader video + browser built-in — 100% lokal, gratis, tanpa batas.**
 
-![Version](https://img.shields.io/badge/version-1.0.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
 
 Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
 
@@ -14,16 +14,20 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 |---|---|
 | 🌐 **Browser Built-in** | Buka YouTube / situs mana pun langsung dari aplikasi. Tonton video di dalam aplikasi. |
 | 🎯 **Deteksi Otomatis URL** | Saat membuka halaman video (YouTube, TikTok, dll.), URL otomatis terisi ke menu Sumber Video. |
-| 📥 **Download Sekali Klik** | Tempel URL → klik Download. Selesai. |
+| 📥 **Download Sekali Klik** | Tempel URL → klik Video atau MP3. Selesai. |
+| ⚡ **DOWNLOAD PARALEL** | Hingga **5 video bersamaan** — download pertama jalan, video berikutnya tetap bisa langsung diunduh. |
+| 🎵 **Mode MP3** | Audio saja, kualitas terbaik + cover art otomatis tertanam. Hemat kuota! |
+| 📜 **Dukungan Playlist** | Tempel link playlist/channel YouTube → semua video otomatis masuk antrean. |
+| 🖼 **Thumbnail** | Gambar cover video (JPG) ikut disimpan (bisa dimatikan). |
+| 📁 **Pilih Folder Simpan** | Bebas tentukan lokasi hasil download — tersimpan permanen. |
 | ⚙️ **Pilihan Kualitas** | Terbaik (otomatis), ≤1080p, ≤720p, ≤480p, ≤360p. |
-| ⚡ **Antrean Download** | Bisa antre beberapa video sekaligus, diproses berurutan. |
-| 📊 **Progress Real-time** | Persentase, kecepatan, ETA, dan bisa dibatalkan kapan saja. |
+| 📊 **Progress Real-time** | Bar progress per-download, kecepatan, ETA, tombol batal per-item. |
 | 🛠 **Update Engine 1-Klik** | Update yt-dlp ke versi terbaru langsung dari aplikasi. |
 | 🔒 **100% Lokal** | Tanpa server, tanpa akun, tanpa telemetri. Semua proses di komputarmu. |
 
 ## 📦 Instalasi
 
-1. Unduh `Klip-Downloader-Setup-1.0.0.exe` dari [halaman Releases](../../releases).
+1. Unduh `Klip-Downloader-Setup-1.1.0.exe` dari [halaman Releases](../../releases).
 2. Jika Windows SmartScreen muncul (karena aplikasi belum ditandatangani), klik **More info → Run anyway**.
 3. Ikuti wizard instalasi, selesai!
 
@@ -38,14 +42,20 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 ### Cara 2 — Tempel URL
 1. Salin link video dari browser/apapun.
 2. Klik **📋 Tempel** (atau tempel manual) di kotak **📥 Sumber Video**.
-3. Pilih kualitas → klik **⬇ Download**.
+3. Pilih mode: **⬇ Video** (MP4) atau **🎵 MP3** (audio saja) → klik.
+
+### ⚡ Download Paralel
+Di baris pengaturan pilih **Paralel: 1–5** — jumlah video yang diunduh bersamaan. Setiap download punya bar progress + tombol batal sendiri.
+
+### 📜 Playlist
+Tempel link playlist (`youtube.com/playlist?list=…`) atau channel (`youtube.com/@nama/videos`) → semua video otomatis masuk antrean dan diunduh paralel (maks 200 item).
 
 ### 💡 Tips YouTube
 Bila YouTube menampilkan *"Sign in to confirm you're not a bot"* saat download: **login dulu ke YouTube lewat browser built-in** di aplikasi, lalu coba download lagi. Cookie login dipakai otomatis oleh engine dan tersimpan hanya di komputarmu.
 
 ## 📁 Lokasi Hasil Download
 
-Video tersimpan di: `C:\Users\<nama>\Videos\Klip Downloader` (bisa dibuka cepat lewat tombol **Buka Folder**).
+Default: `C:\Users\<nama>\Videos\Klip Downloader`. Ingin ganti? Klik **Pilih Folder** — pilihan tersimpan permanen. Buka cepat lewat tombol **Buka Folder**.
 
 ## 🛠 Update Engine
 
