@@ -1,7 +1,7 @@
 {
   "name": "klip-downloader",
   "productName": "Klip Downloader",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Klip Downloader - Download video dari YouTube, TikTok, Instagram, Facebook, Google Drive & ribuan situs lain. Dilengkapi browser built-in. 100% lokal.",
   "main": "main.js",
   "author": "zacrie85",

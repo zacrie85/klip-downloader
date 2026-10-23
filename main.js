@@ -141,7 +141,7 @@ if (!gotLock) {
   });
 
   app.on('window-all-closed', () => {
-    try { if (dm) dm.cancelCurrent(); } catch (e) {}
+    try { if (dm) dm.cancelAll(); } catch (e) {}
     app.quit();
   });
 }
@@ -149,10 +149,10 @@ if (!gotLock) {
 // ---------- Window ----------
 function createWindow() {
   win = new BrowserWindow({
-    width: 1360,
-    height: 920,
-    minWidth: 1080,
-    minHeight: 680,
+    width: 1520,
+    height: 940,
+    minWidth: 1160,
+    minHeight: 700,
     backgroundColor: '#0b1020',
     title: 'Klip Downloader',
     autoHideMenuBar: true,
@@ -181,6 +181,15 @@ function createWindow() {
         app.quit();
       }, 3000);
     });
+    if (process.env.KLIP_SHOT) {
+      setTimeout(async () => {
+        try {
+          const img = await win.webContents.capturePage();
+          fs.writeFileSync(process.env.KLIP_SHOT, img.toPNG());
+          console.log('SHOT_SAVED');
+        } catch (e) { console.log('SHOT_FAIL ' + e.message); }
+      }, 2200);
+    }
   }
 }
 

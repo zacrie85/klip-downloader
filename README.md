@@ -2,7 +2,7 @@
 
 **Downloader video + browser built-in — 100% lokal, gratis, tanpa batas.**
 
-![Version](https://img.shields.io/badge/version-1.1.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
 
 Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
 
@@ -12,6 +12,7 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 
 | Fitur | Keterangan |
 |---|---|
+| 🖥 **Layout Baru 30/70** | Kolom kiri 30% berisi semua menu (berurutan atas–bawah), kolom kanan 70% penuh untuk browser. |
 | 🌐 **Browser Built-in** | Buka YouTube / situs mana pun langsung dari aplikasi. Tonton video di dalam aplikasi. |
 | 🎯 **Deteksi Otomatis URL** | Saat membuka halaman video (YouTube, TikTok, dll.), URL otomatis terisi ke menu Sumber Video. |
 | 📥 **Download Sekali Klik** | Tempel URL → klik Video atau MP3. Selesai. |
@@ -27,21 +28,25 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 
 ## 📦 Instalasi
 
-1. Unduh `Klip-Downloader-Setup-1.1.0.exe` dari [halaman Releases](../../releases).
+1. Unduh `Klip-Downloader-Setup-1.2.0.exe` dari [halaman Releases](../../releases).
 2. Jika Windows SmartScreen muncul (karena aplikasi belum ditandatangani), klik **More info → Run anyway**.
 3. Ikuti wizard instalasi, selesai!
 
 ## 🚀 Cara Pakai
 
+### Tata Letak (v1.2.0)
+- **Kiri (30%)** — semua menu berurutan dari atas ke bawah: Sumber Video (URL, Video/MP3, kualitas, paralel, thumbnail, folder), progress download, dan Hasil Download.
+- **Kanan (70%)** — browser built-in layar penuh untuk browsing & menonton.
+
 ### Cara 1 — Lewat Browser Built-in
-1. Di kotak **🌐 Browser**, buka situs video (default: YouTube) atau ketik alamat di address bar.
+1. Di panel **browser (kanan)**, buka situs video (default: YouTube) atau ketik alamat di address bar.
 2. Tonton / cari video yang kamu mau.
-3. Saat membuka halaman video, URL **otomatis terisi** ke menu **📥 Sumber Video** — tinggal klik **⬇ Download**.
+3. Saat membuka halaman video, URL **otomatis terisi** ke menu **📥 Sumber Video** (kiri) — tinggal klik **⬇ Video** atau **🎵 MP3**.
 4. Bisa juga klik **⬇ Gunakan URL Halaman Ini untuk Download** kapan saja.
 
 ### Cara 2 — Tempel URL
 1. Salin link video dari browser/apapun.
-2. Klik **📋 Tempel** (atau tempel manual) di kotak **📥 Sumber Video**.
+2. Klik **📋 Tempel** (atau tempel manual) di panel **📥 Sumber Video** (kiri).
 3. Pilih mode: **⬇ Video** (MP4) atau **🎵 MP3** (audio saja) → klik.
 
 ### ⚡ Download Paralel

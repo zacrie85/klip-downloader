@@ -1,4 +1,4 @@
-/* ============ KLIP DOWNLOADER v1.1.0 — renderer logic ============ */
+/* ============ KLIP DOWNLOADER v1.2.0 — renderer logic (layout 30/70) ============ */
 const api = window.klip;
 const $ = (id) => document.getElementById(id);
 
