@@ -1,4 +1,4 @@
-/* ============ KLIP DOWNLOADER v1.2.0 — renderer logic (layout 30/70) ============ */
+/* ============ KLIP DOWNLOADER v1.3.0 — renderer logic (layout 30/70) ============ */
 const api = window.klip;
 const $ = (id) => document.getElementById(id);
 
@@ -15,12 +15,16 @@ const el = {
   addrInput: $('addrInput'), btnGo: $('btnGo'),
   loadBar: $('loadBar'), browser: $('browser'),
   btnUseUrl: $('btnUseUrl'), detectChip: $('detectChip'),
+  mediaChip: $('mediaChip'), mediaChipUrl: $('mediaChipUrl'), mediaCount: $('mediaCount'),
   cardSource: $('cardSource'), toast: $('toast')
 };
 
 const rows = new Map(); // id -> {root, title, pct, bar, speed, eta, cancelBtn, state}
 let toastTimer = null;
 let lastAutoUrl = null;
+
+// v1.3.0: daftar media hasil capture browser (terbaru di depan)
+const mediaList = []; // [{url, referer, t}]
 
 /* ---------------- util ---------------- */
 function toast(msg, kind = 'info', ms = 3400) {
@@ -67,7 +71,11 @@ const VIDEO_PATTERNS = [
   /twitter\.com\/.+\/status\/\d+/i, /x\.com\/.+\/status\/\d+/i,
   /vimeo\.com\/\d+/i, /dailymotion\.com\/video\//i, /dai\.ly\//i,
   /drive\.google\.com\/file\/d\//i,
-  /bilibili\.com\/video\//i, /twitch\.tv\/videos\//i
+  /bilibili\.com\/video\//i, /twitch\.tv\/videos\//i,
+  // v1.3.0: situs short drama (URL halaman episode → auto-isi)
+  /flickreels\.net\/playlist\//i,
+  /goodshort\.com\/(drama|episode)\//i,
+  /shortical\.com\/.*\(id=\d+\)/i
 ];
 function isVideoUrl(u) { return VIDEO_PATTERNS.some((r) => r.test(u || '')); }
 
@@ -175,6 +183,9 @@ async function startDownload(mode) {
   el.urlInput.value = u;
 
   const opts = { mode, thumb: el.thumbChk.checked };
+  // v1.3.0: sambungkan referer bila URL berasal dari media capture
+  const mi = mediaList.find((m) => m.url === u);
+  if (mi && mi.referer) opts.referer = mi.referer;
   const r = await api.downloadStart(u, el.qualitySel.value, opts);
   if (r && r.error) { toast('❌ ' + r.error, 'err', 6000); return; }
   if (r && r.playlist) {
@@ -184,6 +195,32 @@ async function startDownload(mode) {
     toast(mode === 'mp3' ? '🎵 Download MP3 dimulai 🚀' : '⬇ Download video dimulai 🚀', 'ok');
   }
 }
+
+/* ---------------- v1.3.0: chip media hasil capture browser ---------------- */
+function showMediaChip() {
+  if (!mediaList.length) return;
+  const latest = mediaList[0];
+  try {
+    el.mediaChipUrl.textContent = latest.url.length > 62 ? latest.url.slice(0, 62) + '…' : latest.url;
+    el.mediaChipUrl.title = latest.url;
+  } catch (e) {}
+  el.mediaCount.textContent = String(mediaList.length);
+  el.mediaChip.classList.remove('hidden');
+}
+
+el.mediaChip.addEventListener('click', () => {
+  if (!mediaList.length) return;
+  const m = mediaList[0];
+  el.urlInput.value = m.url;
+  el.cardSource.classList.add('flash');
+  el.urlInput.classList.add('flash');
+  setTimeout(() => {
+    el.cardSource.classList.remove('flash');
+    el.urlInput.classList.remove('flash');
+  }, 1600);
+  el.urlInput.focus();
+  toast('🎯 URL video dari browser siap diunduh — klik Video/MP3 🚀', 'ok', 4200);
+});
 
 el.btnDownload.addEventListener('click', () => startDownload('video'));
 el.btnMp3.addEventListener('click', () => startDownload('mp3'));
@@ -293,7 +330,12 @@ function handleEvent(evt) {
         r.refs.cancelBtn.textContent = '✕';
         r.refs.cancelBtn.title = 'Tutup baris ini';
       }
-      toast('❌ ' + (evt.message || 'Download gagal'), 'err', 6000);
+      // v1.3.0: panduan khusus situs drama yang butuh media capture
+      const u = (el.urlInput.value || '').toLowerCase();
+      const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com)/.test(u);
+      toast(dramaSite
+        ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+        : '❌ ' + (evt.message || 'Download gagal'), 'err', 8000);
       appendLog((evt.message || 'ERROR'), 'error');
       break;
     }
@@ -323,6 +365,20 @@ function handleEvent(evt) {
     }
     case 'playlist-info': {
       toast(`📜 ${evt.count} item playlist masuk antrean — diunduh paralel 🚀`, 'ok', 5000);
+      break;
+    }
+    case 'media-found': {
+      // v1.3.0: video terdeteksi saat user menonton di browser built-in
+      try {
+        if (evt.url && !mediaList.some((m) => m.url === evt.url)) {
+          const first = mediaList.length === 0;
+          mediaList.unshift({ url: evt.url, referer: evt.referer || '', t: Date.now() });
+          if (mediaList.length > 8) mediaList.length = 8;
+          showMediaChip();
+          // toast hanya untuk deteksi pertama — hindari spam saat streaming
+          if (first) toast('🎯 Video terdeteksi di browser! Klik chip hijau "Video terdeteksi" di menu kiri untuk mengunduh', 'ok', 6000);
+        }
+      } catch (e) {}
       break;
     }
   }

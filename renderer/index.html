@@ -13,7 +13,7 @@
       <span class="logo">🎬</span>
       <div>
         <h1>Klip Downloader</h1>
-        <span class="sub" id="verBadge">v1.2.0</span>
+        <span class="sub" id="verBadge">v1.3.0</span>
       </div>
     </div>
     <div class="top-right">
@@ -27,7 +27,7 @@
       <section class="card panel" id="cardSource">
         <div class="card-head">
           <h2>📥 Sumber Video</h2>
-          <span class="hint">YouTube · TikTok · IG · FB · X · Vimeo · Drive &amp; 1000+ situs</span>
+          <span class="hint">YouTube · TikTok · IG · FB · X · FlickReels · Shortical · GoodShort &amp; 1000+ situs</span>
         </div>
 
         <div class="dl-row">
@@ -35,6 +35,16 @@
                  placeholder="Tempel URL video / playlist…" />
           <button id="btnPaste" class="btn ghost" title="Tempel dari clipboard">📋</button>
         </div>
+
+        <!-- v1.3.0: chip video terdeteksi dari browser (situs drama SPA) -->
+        <button id="mediaChip" class="media-chip hidden" title="Klik untuk memakai URL video yang terdeteksi di browser">
+          <span class="mc-ico">🎯</span>
+          <span class="mc-text">
+            <b>Video terdeteksi di browser!</b>
+            <span id="mediaChipUrl">—</span>
+          </span>
+          <span class="mc-count" id="mediaCount">1</span>
+        </button>
 
         <div class="act-row">
           <button id="btnDownload" class="btn primary grow" title="Download video (MP4)">⬇ Video</button>
@@ -89,7 +99,7 @@
       </section>
 
       <footer class="foot">
-        Klip Downloader v<span id="verFoot">1.2.0</span> — 100% lokal di komputarmu.
+        Klip Downloader v<span id="verFoot">1.3.0</span> — 100% lokal di komputarmu.
       </footer>
     </aside>
 
@@ -113,7 +123,7 @@
       <div class="browser-actions">
         <button id="btnUseUrl" class="btn primary">⬇ Gunakan URL Halaman Ini untuk Download</button>
         <span id="detectChip" class="chip hidden">🎯 Video terdeteksi — URL otomatis terisi ke menu kiri!</span>
-        <span class="tip-inline">💡 Bila YouTube minta verifikasi saat download: login dulu lewat browser ini, lalu coba download lagi.</span>
+        <span class="tip-inline">💡 Situs drama (FlickReels/Shortical/GoodShort): buka episode di browser ini, tekan Play — video otomatis terdeteksi ke menu kiri. Situs lain: tempel URL-nya langsung.</span>
       </div>
     </section>
   </main>

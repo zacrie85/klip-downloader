@@ -2,9 +2,9 @@
 
 **Downloader video + browser built-in — 100% lokal, gratis, tanpa batas.**
 
-![Version](https://img.shields.io/badge/version-1.2.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
 
-Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
+Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, **FlickReels, Shortical, GoodShort**, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
 
 ---
 
@@ -12,6 +12,8 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 
 | Fitur | Keterangan |
 |---|---|
+| 🎯 **MEDIA CAPTURE — SITUS DRAMA** | **BARU v1.3.0** — buka episode di **FlickReels / Shortical / GoodShort** di browser aplikasi, tekan **Play** → video terdeteksi otomatis (chip hijau 🎯) → klik → download. Bekerja juga untuk situs apa pun yang video-nya dinamis! |
+| ✂️ **URL Episode Langsung** | **BARU v1.3.0** — link episode FlickReels (dan kebanyakan situs) bisa langsung ditempel & diunduh tanpa buka browser. |
 | 🖥 **Layout Baru 30/70** | Kolom kiri 30% berisi semua menu (berurutan atas–bawah), kolom kanan 70% penuh untuk browser. |
 | 🌐 **Browser Built-in** | Buka YouTube / situs mana pun langsung dari aplikasi. Tonton video di dalam aplikasi. |
 | 🎯 **Deteksi Otomatis URL** | Saat membuka halaman video (YouTube, TikTok, dll.), URL otomatis terisi ke menu Sumber Video. |

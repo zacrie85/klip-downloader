@@ -1,6 +1,6 @@
 /**
- * KLIP DOWNLOADER v1.0.0
- * Downloader video + browser built-in. 100% lokal (tanpa server).
+ * KLIP DOWNLOADER v1.3.0
+ * Downloader video + browser built-in + media capture untuk situs short drama.
  * Author: zacrie85
  */
 const { app, BrowserWindow, ipcMain, shell, clipboard, Menu, session, dialog } = require('electron');
@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { DownloadManager, MEDIA_EXTS } = require('./lib/downloader');
+const { createMediaTracker, isMediaContentType, shouldCapture } = require('./lib/mediacapture');
 
 // ---------- App flags ----------
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -21,6 +22,7 @@ let outDir = null;
 let settings = {};
 let ytdlpPath = null;
 let ffmpegPath = null;
+let mediaTracker = null;
 
 // ---------- Settings (folder simpan tersimpan permanen) ----------
 function settingsPath() { return path.join(app.getPath('userData'), 'settings.json'); }
@@ -136,6 +138,11 @@ if (!gotLock) {
       cookiesProvider: exportBrowserCookies
     });
 
+    // v1.3.0: pelacak media dari browser built-in (FlickReels, Shortical,
+    // GoodShort, dan situs apa pun yang video-nya tidak bisa diambil yt-dlp)
+    mediaTracker = createMediaTracker((evt) => send(evt));
+    attachMediaCapture(bSession);
+
     createWindow();
     registerIpc();
   });
@@ -191,6 +198,40 @@ function createWindow() {
       }, 2200);
     }
   }
+}
+
+// ---------- v1.3.0: Media capture dari session browser ----------
+// Memantau SEMUA request di session 'persist:browser'. Bila ada yang
+// berupa media (ekstensi .m3u8/.mp4/dll, resourceType 'media', atau
+// Content-Type video/audio), catat URL-nya + referer-nya lalu kabari UI.
+function attachMediaCapture(bSession) {
+  const filter = { urls: ['*://*/*'] };
+
+  const wr = bSession.webRequest;
+
+  // 1) Deteksi berdasar URL / resourceType (paling cepat)
+  wr.onBeforeSendHeaders(filter, (details, cb) => {
+    try {
+      if (shouldCapture(details.url, details.resourceType)) {
+        mediaTracker.note(details.url, details.referrer || '');
+      }
+    } catch (e) {}
+    cb({ requestHeaders: details.requestHeaders });
+  });
+
+  // 2) Deteksi berdasar Content-Type respons (menangkap CDN tanpa ekstensi)
+  wr.onResponseStarted(filter, (details) => {
+    try {
+      const h = details.responseHeaders || {};
+      let ct = '';
+      for (const k of Object.keys(h)) {
+        if (k.toLowerCase() === 'content-type') { ct = Array.isArray(h[k]) ? h[k][0] : h[k]; break; }
+      }
+      if (isMediaContentType(ct) && !/text\/html/i.test(ct)) {
+        mediaTracker.note(details.url, details.referrer || '');
+      }
+    } catch (e) {}
+  });
 }
 
 // ---------- Webview handling (browser box) ----------
@@ -316,8 +357,14 @@ function registerIpc() {
       }
     }
 
-    return dm.start(url, quality, { mode, thumb });
+    // v1.3.0: referer dari media capture (CDN drama biasanya cek Referer)
+    const referer = opts && typeof opts.referer === 'string' ? opts.referer : null;
+    return dm.start(url, quality, { mode, thumb, referer });
   });
+
+  ipcMain.handle('media:list', () => (mediaTracker ? mediaTracker.list().slice(0, 12) : []));
+
+  ipcMain.handle('media:clear', () => { if (mediaTracker) mediaTracker.clear(); return true; });
 
   ipcMain.handle('download:cancel', (e, id) => {
     if (id) return dm.cancel(String(id));

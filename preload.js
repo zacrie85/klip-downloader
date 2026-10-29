@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('klip', {
   openFile: (p) => ipcRenderer.invoke('downloads:openFile', p),
   readClipboard: () => ipcRenderer.invoke('clipboard:read'),
   updateEngine: () => ipcRenderer.invoke('engine:update'),
+  mediaList: () => ipcRenderer.invoke('media:list'),
+  mediaClear: () => ipcRenderer.invoke('media:clear'),
   onEvent: (cb) => {
     const h = (e, d) => { try { cb(d); } catch (err) { console.error('event handler', err); } };
     ipcRenderer.on('download:event', h);
