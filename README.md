@@ -2,9 +2,9 @@
 
 **Downloader video + browser built-in — 100% lokal, gratis, tanpa batas.**
 
-![Version](https://img.shields.io/badge/version-1.3.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
+![Version](https://img.shields.io/badge/version-1.4.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
 
-Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, **FlickReels, Shortical, GoodShort**, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
+Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, **BiliBili TV, FlickReels, Shortical, GoodShort**, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
 
 ---
 
@@ -12,8 +12,9 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 
 | Fitur | Keterangan |
 |---|---|
-| 🎯 **MEDIA CAPTURE — SITUS DRAMA** | **BARU v1.3.0** — buka episode di **FlickReels / Shortical / GoodShort** di browser aplikasi, tekan **Play** → video terdeteksi otomatis (chip hijau 🎯) → klik → download. Bekerja juga untuk situs apa pun yang video-nya dinamis! |
-| ✂️ **URL Episode Langsung** | **BARU v1.3.0** — link episode FlickReels (dan kebanyakan situs) bisa langsung ditempel & diunduh tanpa buka browser. |
+| 🎯 **MEDIA CAPTURE — SITUS DRAMA** | **v1.3.0** — buka episode di **FlickReels / Shortical / GoodShort** di browser aplikasi, tekan **Play** → video terdeteksi otomatis (chip hijau 🎯) → klik → download. Bekerja juga untuk situs apa pun yang video-nya dinamis! |
+| ✂️ **URL Episode Langsung** | **v1.3.0** — link episode FlickReels (dan kebanyakan situs) bisa langsung ditempel & diunduh tanpa buka browser. |
+| 📺 **BILIBILI TV (SHORT DRAMA)** | **BARU v1.4.0** — tempel URL episode `bilibili.tv/id/play/{drama}/{ep}` atau URL dramanya `bilibili.tv/id/play/{drama}` → **seluruh episode otomatis masuk antrean paralel** (contoh: 1 drama = 72 episode). Juga mendukung `bilibili.tv/id/video/{id}`. Deteksi otomatis saat browsing di browser aplikasi. |
 | 🖥 **Layout Baru 30/70** | Kolom kiri 30% berisi semua menu (berurutan atas–bawah), kolom kanan 70% penuh untuk browser. |
 | 🌐 **Browser Built-in** | Buka YouTube / situs mana pun langsung dari aplikasi. Tonton video di dalam aplikasi. |
 | 🎯 **Deteksi Otomatis URL** | Saat membuka halaman video (YouTube, TikTok, dll.), URL otomatis terisi ke menu Sumber Video. |
@@ -57,6 +58,11 @@ Di baris pengaturan pilih **Paralel: 1–5** — jumlah video yang diunduh bersa
 ### 📜 Playlist
 Tempel link playlist (`youtube.com/playlist?list=…`) atau channel (`youtube.com/@nama/videos`) → semua video otomatis masuk antrean dan diunduh paralel (maks 200 item).
 
+### 📺 BiliBili TV (Short Drama) — v1.4.0
+1. Buka `bilibili.tv/id/short-drama` di browser aplikasi atau salin URL dramanya.
+2. Tempel **URL drama** (`bilibili.tv/id/play/2130147`) → semua episode (bisa puluhan) otomatis masuk antrean paralel; atau tempel **URL satu episode** (`bilibili.tv/id/play/2130147/13810256`) untuk download episode itu saja.
+3. Klik **⬇ Video** — selesai! Konten VIP/berbayar tetap hanya bisa diakses sesuai akunmu.
+
 ### 💡 Tips YouTube
 Bila YouTube menampilkan *"Sign in to confirm you're not a bot"* saat download: **login dulu ke YouTube lewat browser built-in** di aplikasi, lalu coba download lagi. Cookie login dipakai otomatis oleh engine dan tersimpan hanya di komputarmu.
 
@@ -82,8 +88,22 @@ Build Windows di Linux butuh: `NODE_OPTIONS="--require ./scripts/patch-macos-che
 ## ⚖️ Catatan
 
 - Gunakan hanya untuk konten yang kamu punya izin untuk mengunduh.
-- Aplikasi ini tidak berafiliasi dengan YouTube, TikTok, Instagram, Facebook, atau platform lainnya.
+- Aplikasi ini tidak berafiliasi dengan YouTube, TikTok, Instagram, Facebook, BiliBili, atau platform lainnya.
 
 ## 📄 Lisensi
 
 MIT © 2026 [zacrie85](https://github.com/zacrie85)
+
+## 🗒 Changelog
+
+### v1.4.0
+- **BiliBili TV (bilibili.tv)** — download video & short drama dari bilibili.tv (semua bahasa: /id/, /en/, dll.):
+  - URL drama `…/play/{drama}` → seluruh episode otomatis masuk antrean paralel (playlist).
+  - URL episode `…/play/{drama}/{ep}` & video `…/video/{id}` → download tunggal.
+  - Deteksi otomatis saat membuka halaman episode di browser built-in.
+  - Panduan khusus di toast bila download gagal (konten VIP/region).
+
+### v1.3.0
+- Media capture dari browser built-in untuk FlickReels / Shortical / GoodShort (chip 🎯 "Video terdeteksi").
+- Header Referer otomatis untuk URL media hasil capture.
+- Chip deteksi otomatis diperluas ke situs short drama.

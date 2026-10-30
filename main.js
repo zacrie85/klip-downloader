@@ -1,5 +1,5 @@
 /**
- * KLIP DOWNLOADER v1.3.0
+ * KLIP DOWNLOADER v1.4.0
  * Downloader video + browser built-in + media capture untuk situs short drama.
  * Author: zacrie85
  */
@@ -254,6 +254,10 @@ app.on('web-contents-created', (ev, contents) => {
 function isPlaylistUrl(u) {
   // watch?v=... → selalu single video (walau ada &list=...)
   if (/youtube\.com\/watch\?/i.test(u)) return false;
+  // v1.4.0: URL drama BiliBili TV TANPA ep id → 1 drama berisi banyak episode
+  //   bilibili.tv/id/play/2130147          → playlist (seluruh episode drama)
+  //   bilibili.tv/id/play/2130147/13810256 → episode tunggal, bukan playlist
+  if (/bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?play\/\d+\/?([?#]|$)/i.test(u)) return true;
   return (
     /[?&]list=/i.test(u) ||
     /youtube\.com\/playlist\?/i.test(u) ||

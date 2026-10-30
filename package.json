@@ -1,14 +1,14 @@
 {
   "name": "klip-downloader",
   "productName": "Klip Downloader",
-  "version": "1.3.0",
-  "description": "Klip Downloader - Download video dari YouTube, TikTok, Instagram, Facebook, Google Drive, FlickReels, Shortical, GoodShort & ribuan situs lain. Dilengkapi browser built-in + media capture. 100% lokal.",
+  "version": "1.4.0",
+  "description": "Klip Downloader - Download video dari YouTube, TikTok, Instagram, Facebook, Google Drive, BiliBili TV, FlickReels, Shortical, GoodShort & ribuan situs lain. Dilengkapi browser built-in + media capture. 100% lokal.",
   "main": "main.js",
   "author": "zacrie85",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win"
+    "build:win": "node scripts/patch-nsis-nodewine.js && electron-builder --win"
   },
   "devDependencies": {
     "electron": "31.7.7",

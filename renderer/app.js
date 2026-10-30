@@ -1,4 +1,4 @@
-/* ============ KLIP DOWNLOADER v1.3.0 — renderer logic (layout 30/70) ============ */
+/* ============ KLIP DOWNLOADER v1.4.0 — renderer logic (layout 30/70) ============ */
 const api = window.klip;
 const $ = (id) => document.getElementById(id);
 
@@ -75,7 +75,12 @@ const VIDEO_PATTERNS = [
   // v1.3.0: situs short drama (URL halaman episode → auto-isi)
   /flickreels\.net\/playlist\//i,
   /goodshort\.com\/(drama|episode)\//i,
-  /shortical\.com\/.*\(id=\d+\)/i
+  /shortical\.com\/.*\(id=\d+\)/i,
+  // v1.4.0: BiliBili TV (bilibili.tv) — episode/video short drama
+  //   /id/play/{season}/{ep} → 1 episode · /id/play/{season} → 1 drama (playlist)
+  //   /id/video/{aid} → video tunggal
+  /bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?video\/\d+/i,
+  /bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?play\/\d+(?:\/\d+)?/i
 ];
 function isVideoUrl(u) { return VIDEO_PATTERNS.some((r) => r.test(u || '')); }
 
@@ -332,10 +337,13 @@ function handleEvent(evt) {
       }
       // v1.3.0: panduan khusus situs drama yang butuh media capture
       const u = (el.urlInput.value || '').toLowerCase();
-      const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com)/.test(u);
-      toast(dramaSite
-        ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-        : '❌ ' + (evt.message || 'Download gagal'), 'err', 8000);
+      const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com|bilibili\.tv)/.test(u);
+      const bili = /bilibili\.tv/.test(u);
+      toast(dramaSite && bili
+        ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+        : dramaSite
+          ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+          : '❌ ' + (evt.message || 'Download gagal'), 'err', 8000);
       appendLog((evt.message || 'ERROR'), 'error');
       break;
     }
