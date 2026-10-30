@@ -555,6 +555,9 @@ const VIDIO_RESOLVE_JS = `(async () => {
 })()`;
 
 // GoodShort — episode tunggal (/episode/{book}/{chapter})
+// v1.5.2 FIX: nomor episode diambil dari slug URL situs ("001-69606228" → EP 1,
+// "013-69606240" → EP 13 — pola NNN-chapterId terverifikasi). Sebelumnya ep:1
+// di-hardcode sehingga episode ke-2 dst bernama sama dan menimpa file EP 1.
 const GOODSHORT_EP_RESOLVE_JS = `(async () => {
   const out = { ok:false, entries:[], title:null };
   try {
@@ -570,7 +573,14 @@ const GOODSHORT_EP_RESOLVE_JS = `(async () => {
     if (r.ok) {
       const j = await r.json().catch(() => ({}));
       if (j && j.status === 0 && j.data && j.data.m3u8Path) {
-        out.entries.push({ url: j.data.m3u8Path, ep: 1 });
+        // nomor episode: segmen angka pertama slug chapter ("013" → 13)
+        let epNum = parseInt(String(m[2].split('-')[0] || ''), 10);
+        if (!Number.isFinite(epNum) || epNum <= 0) {
+          const cand = j.data.num != null ? j.data.num : (j.data.number != null ? j.data.number : j.data.sort);
+          epNum = parseInt(String(cand == null ? '' : cand), 10);
+        }
+        if (!Number.isFinite(epNum) || epNum <= 0) epNum = 1;
+        out.entries.push({ url: j.data.m3u8Path, ep: epNum });
         if (j.data.book && j.data.book.name) out.title = j.data.book.name;
         out.ok = true;
       }
@@ -690,7 +700,10 @@ async function tryResolveSite(pageUrl) {
   if (r2 && r2.ok && Array.isArray(r2.entries) && r2.entries.length) {
     siteResolved = { pageUrl, entries: r2.entries, title: r2.outName || title2, referer: site.referer };
     const n = r2.entries.length;
-    el.siteChipTitle.textContent = n > 1 ? `${siteResolved.title} — ${n} episode siap` : siteResolved.title;
+    // v1.5.2: episode tunggal → tampilkan nama file persis (mis. "Judul - EP 2")
+    el.siteChipTitle.textContent = n > 1
+      ? `${siteResolved.title} — ${n} episode siap`
+      : (r2.entries[0].outName || siteResolved.title);
     el.siteChip.classList.remove('hidden');
     toast(n > 1
       ? `📺 ${n} episode GoodShort siap — klik tombol 📺 hijau untuk mengunduh semuanya!`

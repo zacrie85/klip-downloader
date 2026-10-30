@@ -334,10 +334,16 @@ function registerSiteResolveIpc() {
     if (!raw.length) return { ok: false, reason: 'tidak ada kandidat episode' };
     const v = await checkStreamUrl(raw[0].url, 'https://www.goodshort.com/');
     if (!v.ok) return { ok: false, reason: 'link episode ' + (v.reason || 'tidak valid') };
-    const entries = raw.map((x, i) => ({
-      url: i === 0 ? v.url : x.url,
-      outName: `${title} - EP ${x.ep || i + 1}`
-    }));
+    // v1.5.2: nama file unik dalam satu batch — kalau dua entri menghasilkan
+    // nama sama, tambahkan suffix (2), (3) … supaya tidak saling menimpa
+    const seen = new Map();
+    const entries = raw.map((x, i) => {
+      let nm = `${title} - EP ${x.ep || i + 1}`;
+      const dup = (seen.get(nm) || 0) + 1;
+      seen.set(nm, dup);
+      if (dup > 1) nm = `${nm} (${dup})`;
+      return { url: i === 0 ? v.url : x.url, outName: nm };
+    });
     return { ok: true, entries, outName: title };
   });
 }

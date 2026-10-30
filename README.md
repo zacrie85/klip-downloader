@@ -2,7 +2,7 @@
 
 **Downloader video + browser built-in — 100% lokal, gratis, tanpa batas.**
 
-![Version](https://img.shields.io/badge/version-1.5.1-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
+![Version](https://img.shields.io/badge/version-1.5.2-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
 
 Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, **BiliBili TV, Vidio, Dramaharian, FlickReels, Shortical, GoodShort**, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
 
@@ -16,7 +16,7 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 | ✂️ **URL Episode Langsung** | **v1.3.0** — link episode FlickReels (dan kebanyakan situs) bisa langsung ditempel & diunduh tanpa buka browser. |
 | 📺 **BILIBILI TV (SHORT DRAMA)** | **v1.4.0** — tempel URL episode `bilibili.tv/id/play/{drama}/{ep}` atau URL dramanya `bilibili.tv/id/play/{drama}` → **seluruh episode otomatis masuk antrean paralel** (contoh: 1 drama = 72 episode). Juga mendukung `bilibili.tv/id/video/{id}`. Deteksi otomatis saat browsing di browser aplikasi. |
 | 🎭 **DRAMAHARIAN (SHORT DRAMA)** | **v1.5.0** — tempel URL drama `dramaharian.com/drama/{provider}/{id}` → **semua episode gratis otomatis masuk antrean paralel** dengan nama file rapi (`Judul Drama - EP 1.mp4`, dst). Mendukung semua provider (dramabite, dramawave, flextv, flickreels, freereels, dll). URL episode tunggal `/tonton/…` juga didukung. |
-| 🎬 **GOODSHORT (SHORT DRAMA)** | **BARU v1.5.1** — buka episode `goodshort.com/episode/…` di browser aplikasi → link video otomatis siap (chip 📺) → klik → unduh. Halaman drama → semua episode gratis masuk antrean paralel. |
+| 🎬 **GOODSHORT (SHORT DRAMA)** | **BARU v1.5.1 · diperbaiki v1.5.2** — buka episode `goodshort.com/episode/…` di browser aplikasi → link video otomatis siap (chip 📺) → klik → unduh dengan nama file unik per episode (`Judul - EP 2.mp4`, dst). Halaman drama → semua episode gratis masuk antrean paralel. |
 | 📺 **VIDIO.COM** | **v1.5.0 · diperbaiki v1.5.1** — buka videonya di browser aplikasi → link stream disiapkan otomatis (chip 📺) → klik → unduh. Series `premier/…` otomatis. Premium: login di browser aplikasi (non-DRM). |
 | 🖥 **Layout Baru 30/70** | Kolom kiri 30% berisi semua menu (berurutan atas–bawah), kolom kanan 70% penuh untuk browser. |
 | 🌐 **Browser Built-in** | Buka YouTube / situs mana pun langsung dari aplikasi. Tonton video di dalam aplikasi. |
@@ -34,7 +34,7 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 
 ## 📦 Instalasi
 
-1. Unduh `Klip-Downloader-Setup-1.5.1.exe` dari [halaman Releases](../../releases).
+1. Unduh `Klip-Downloader-Setup-1.5.2.exe` dari [halaman Releases](../../releases).
 2. Jika Windows SmartScreen muncul (karena aplikasi belum ditandatangani), klik **More info → Run anyway**.
 3. Ikuti wizard instalasi, selesai!
 
@@ -110,6 +110,14 @@ Build Windows di Linux butuh: `NODE_OPTIONS="--require ./scripts/patch-macos-che
 MIT © 2026 [zacrie85](https://github.com/zacrie85)
 
 ## 🗒 Changelog
+
+### v1.5.2
+- **FIX GoodShort — nama file saling menimpa**: sebelumnya SEMUA episode tunggal dinamai `Judul - EP 1` (nomor episode di-hardcode), sehingga mengunduh episode ke-2 menimpa file episode pertama.
+  - Nomor episode kini diambil dari slug URL situs: `…/episode/judul-drama-123/002-69606229` → **EP 2**, `013-…` → **EP 13** (pola `NNN-chapterId` resmi situs).
+  - Fallback ke field nomor episode API bila slug tidak numerik; terakhir → EP 1.
+  - Chip 📺 kini menampilkan **nama file persis** yang akan dihasilkan (mis. `Judul - EP 2`).
+- **Anti-timpa ekstra**: dalam satu batch, bila dua entri menghasilkan nama sama, otomatis diberi suffix `(2)`, `(3)`, dst. Download tetap memakai `--no-overwrites`.
+- Test: `scripts/test_v152.js` (16 pass) — slug EP 1/2/13 nyata, fallback, dedupe; seluruh suite lama tetap lulus (v151: 17, v15: 31, v14, v13: 31, downloader).
 
 ### v1.5.1
 - **FIX Vidio (vidio.com)** — video modern tidak lagi punya playlist publik (yt-dlp → `HTTP 404`) dan konten premium butuh session:
