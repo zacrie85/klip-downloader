@@ -313,6 +313,7 @@ function handleEvent(evt) {
     }
     case 'start': {
       const r = rowFor(evt.id, evt.title || 'Mengunduh…');
+      r.root.classList.remove('err'); // v1.5.3: baris bisa di-retry → bersihkan status gagal
       r.refs.state.textContent = evt.mode === 'mp3' ? '🎵 Mengunduh audio…' : '⬇ Mengunduh…';
       break;
     }
@@ -358,21 +359,25 @@ function handleEvent(evt) {
         r.refs.cancelBtn.textContent = '✕';
         r.refs.cancelBtn.title = 'Tutup baris ini';
       }
+      // v1.5.3: kegagalan postprocessing (merge ffmpeg) → panduan khusus
+      const ppFail = /postprocessing|error opening output|incorrect codec parameters/i.test(evt.message || '');
       // v1.3.0 + v1.5.1: panduan khusus situs drama & Vidio/GoodShort
       const u = (el.urlInput.value || '').toLowerCase();
       const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com|bilibili\.tv|dramaharian\.com)/.test(u);
       const bili = /bilibili\.tv/.test(u);
       const vidio = /vidio\.com/.test(u);
       const gshort = /goodshort\.com/.test(u);
-      toast(vidio
-        ? '❌ Vidio gagal diunduh. Solusi: buka dulu videonya di BROWSER aplikasi (link disiapkan otomatis ±7 detik) lalu klik tombol 📺. Konten premium → login vidio.com di browser ini dulu. Konten DRM tidak bisa diunduh.'
-        : gshort
-          ? '❌ GoodShort gagal via URL langsung (dilindungi WAF). Solusi: buka episode-nya di BROWSER aplikasi → tunggu chip 📺 "Link video siap" → klik → download otomatis. Atau tekan Play lalu pakai chip 🎯'
-          : dramaSite && bili
-            ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-            : dramaSite
-              ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-              : '❌ ' + (evt.message || 'Download gagal'), 'err', 9000);
+      toast(ppFail
+        ? '❌ Video terunduh tapi GAGAL SAAT MENGGABUNGKAN (ffmpeg). Aplikasi sudah mencoba ulang otomatis. Kalau tetap gagal: 1) pakai folder simpan sederhana (mis. Documents\\Klip), 2) tutup video yang sedang diputar di player, 3) coba kualitas 480P.'
+        : vidio
+          ? '❌ Vidio gagal diunduh. Solusi: buka dulu videonya di BROWSER aplikasi (link disiapkan otomatis ±7 detik) lalu klik tombol 📺. Konten premium → login vidio.com di browser ini dulu. Konten DRM tidak bisa diunduh.'
+          : gshort
+            ? '❌ GoodShort gagal via URL langsung (dilindungi WAF). Solusi: buka episode-nya di BROWSER aplikasi → tunggu chip 📺 "Link video siap" → klik → download otomatis. Atau tekan Play lalu pakai chip 🎯'
+            : dramaSite && bili
+              ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+              : dramaSite
+                ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+                : '❌ ' + (evt.message || 'Download gagal'), 'err', 9000);
       appendLog((evt.message || 'ERROR'), 'error');
       break;
     }
