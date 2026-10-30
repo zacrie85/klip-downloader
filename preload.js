@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld('klip', {
   updateEngine: () => ipcRenderer.invoke('engine:update'),
   mediaList: () => ipcRenderer.invoke('media:list'),
   mediaClear: () => ipcRenderer.invoke('media:clear'),
+  // v1.5.1: validasi & resolusi link stream Vidio (dari inject JS browser built-in)
+  resolveVidio: (payload) => ipcRenderer.invoke('vidio:resolve', payload),
+  // v1.5.1: validasi & resolusi daftar episode GoodShort
+  resolveGoodshort: (payload) => ipcRenderer.invoke('goodshort:resolve', payload),
   onEvent: (cb) => {
     const h = (e, d) => { try { cb(d); } catch (err) { console.error('event handler', err); } };
     ipcRenderer.on('download:event', h);

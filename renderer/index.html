@@ -46,6 +46,16 @@
           <span class="mc-count" id="mediaCount">1</span>
         </button>
 
+        <!-- v1.5.1: chip link siap utk Vidio/GoodShort (resolusi otomatis dari browser) -->
+        <button id="siteChip" class="media-chip hidden" title="Klik untuk langsung mengunduh video dari halaman ini">
+          <span class="mc-ico">📺</span>
+          <span class="mc-text">
+            <b>Link video siap diunduh!</b>
+            <span id="siteChipTitle">—</span>
+          </span>
+          <span class="mc-count">▶</span>
+        </button>
+
         <div class="act-row">
           <button id="btnDownload" class="btn primary grow" title="Download video (MP4)">⬇ Video</button>
           <button id="btnMp3" class="btn mp3 grow" title="Download audio saja (MP3) — hemat kuota">🎵 MP3</button>
@@ -99,7 +109,7 @@
       </section>
 
       <footer class="foot">
-        Klip Downloader v<span id="verFoot">1.4.0</span> — 100% lokal di komputarmu.
+        Klip Downloader v<span id="verFoot">1.5.1</span> — 100% lokal di komputarmu.
       </footer>
     </aside>
 
@@ -123,7 +133,7 @@
       <div class="browser-actions">
         <button id="btnUseUrl" class="btn primary">⬇ Gunakan URL Halaman Ini untuk Download</button>
         <span id="detectChip" class="chip hidden">🎯 Video terdeteksi — URL otomatis terisi ke menu kiri!</span>
-        <span class="tip-inline">💡 Dramaharian: tempel URL drama (dramaharian.com/drama/…) → semua episode gratis otomatis masuk antrean. Vidio: tempel URL-nya; konten premium → login dulu vidio.com di browser ini. BiliBili TV: URL drama → semua episode otomatis. Situs drama lain (FlickReels/Shortical/GoodShort): tekan Play di browser ini — video terdeteksi ke menu kiri.</span>
+        <span class="tip-inline">💡 Dramaharian: URL drama → semua episode gratis otomatis. GoodShort &amp; Vidio: buka videonya di browser ini → chip 📺 muncul → klik untuk unduh (premium Vidio: login dulu di browser ini). BiliBili TV: URL drama → semua episode otomatis. Situs lain (FlickReels/Shortical): tekan Play di browser ini — video terdeteksi ke menu kiri.</span>
       </div>
     </section>
   </main>

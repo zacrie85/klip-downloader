@@ -1,5 +1,5 @@
 /**
- * KLIP DOWNLOADER v1.5.0
+ * KLIP DOWNLOADER v1.5.1
  * Downloader video + browser built-in + media capture untuk situs short drama.
  * Author: zacrie85
  */
@@ -145,6 +145,7 @@ if (!gotLock) {
 
     createWindow();
     registerIpc();
+    registerSiteResolveIpc();
   });
 
   app.on('window-all-closed', () => {
@@ -249,6 +250,97 @@ app.on('web-contents-created', (ev, contents) => {
     });
   }
 });
+
+// ---------- v1.5.1: Vidio (vidio.com) — resolusi link stream ----------
+// Video modern Vidio tidak lagi menyediakan playlist.m3u8 publik (404) dan
+// konten premium butuh session. Player web-nya meminta token lewat
+// POST /live/{id}/tokens dari KONTEKS HALAMAN (cookie+CSRF browser).
+// Renderer meng-inject JS ke browser built-in → kandidat URL stream →
+// main memvalidasi (GET, harus #EXTM3U / mp4) → dipakai untuk download.
+
+const VIDIO_PAGE_RE = /^https?:\/\/(?:www\.)?vidio\.com\/(watch|embed)\/(\d+)(?:-[^/?#]*)?/i;
+const VIDIO_LIVE_RE = /^https?:\/\/(?:www\.)?vidio\.com\/live\/(\d+)/i;
+
+// Validasi cepat URL stream: 1 redirect, baca chunk pertama, cek konten
+function checkStreamUrl(url, referer) {
+  return new Promise((resolve) => {
+    try {
+      const u = new URL(url);
+      const lib = u.protocol === 'https:' ? require('https') : require('http');
+      const req = lib.get(u, {
+        headers: {
+          'User-Agent': app.userAgentFallback,
+          'Accept': '*/*',
+          ...(referer ? { 'Referer': referer } : {})
+        }, timeout: 9000
+      }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && !res.headers.location.startsWith('/drm')) {
+          res.resume();
+          const next = new URL(res.headers.location, u).href;
+          return checkStreamUrl(next, referer).then(resolve);
+        }
+        if (res.statusCode !== 200) { res.resume(); return resolve({ ok: false, reason: 'HTTP ' + res.statusCode }); }
+        let buf = '';
+        let done = false;
+        res.on('data', (d) => {
+          if (done) return;
+          done = true;
+          buf += d.toString('utf8');
+          res.destroy();
+          if (buf.includes('#EXTM3U') || buf.includes('#EXT-X')) return resolve({ ok: true, url });
+          if (buf.length > 4) return resolve({ ok: true, url }); // mp4/mpd biasanya binary → anggap OK
+          resolve({ ok: false, reason: 'isi kosong' });
+        });
+        res.on('error', () => { if (!done) { done = true; resolve({ ok: false, reason: 'koneksi terputus' }); } });
+      });
+      req.on('timeout', () => { try { req.destroy(new Error('timeout')); } catch (e) {} });
+      req.on('error', (e) => resolve({ ok: false, reason: e.message }));
+    } catch (e) { resolve({ ok: false, reason: e.message }); }
+  });
+}
+
+function safeOutName(title) {
+  let s = String(title || '');
+  // buang suffix situs SEBELUM strip karakter ilegal (jika tidak, '|' hilang duluan
+  // dan suffix 'Vidio'/'GoodShort' menempel di nama file)
+  s = s.replace(/\s*[|\u2013\u2014-]\s*Vidio.*$/i, '');
+  s = s.replace(/\s*[|\u2013\u2014-]\s*GoodShort.*$/i, '');
+  s = s.replace(/\s*[\u2013\u2014-]\s*Nonton.*$/i, '');
+  s = s.replace(/[<>:"/\\|?*\x00-\x1f]/g, '');
+  s = s.replace(/\s+/g, ' ').trim();
+  return ((s.length > 90 ? s.slice(0, 90).trim() : s) || 'video-situs');
+}
+
+function registerSiteResolveIpc() {
+  // v1.5.1: Vidio — kandidat URL stream dari inject JS, divalidasi satu per satu
+  ipcMain.handle('vidio:resolve', async (e, payload = {}) => {
+    const candidates = Array.isArray(payload.candidates) ? payload.candidates.filter((x) => typeof x === 'string' && /^https?:\/\//.test(x)).slice(0, 6) : [];
+    const referer = 'https://www.vidio.com/';
+    const outName = safeOutName(payload.title);
+    for (const c of candidates) {
+      const v = await checkStreamUrl(c, referer);
+      if (v.ok) return { ok: true, url: v.url, outName, via: c === v.url ? 'direct' : 'redirect' };
+    }
+    return { ok: false, reason: candidates.length ? 'semua kandidat tidak valid' : 'tidak ada kandidat', outName };
+  });
+
+  // v1.5.1: GoodShort — daftar episode (1 atau banyak) dari inject JS.
+  // Entri pertama divalidasi; sisanya dipercaya (baru saja diambil dari API situs).
+  ipcMain.handle('goodshort:resolve', async (e, payload = {}) => {
+    const title = safeOutName(payload.title || 'goodshort');
+    const raw = Array.isArray(payload.entries) ? payload.entries
+      .filter((x) => x && typeof x.url === 'string' && /^https?:\/\//.test(x.url))
+      .slice(0, 200) : [];
+    if (!raw.length) return { ok: false, reason: 'tidak ada kandidat episode' };
+    const v = await checkStreamUrl(raw[0].url, 'https://www.goodshort.com/');
+    if (!v.ok) return { ok: false, reason: 'link episode ' + (v.reason || 'tidak valid') };
+    const entries = raw.map((x, i) => ({
+      url: i === 0 ? v.url : x.url,
+      outName: `${title} - EP ${x.ep || i + 1}`
+    }));
+    return { ok: true, entries, outName: title };
+  });
+}
 
 // ---------- Playlist helpers ----------
 function isPlaylistUrl(u) {
@@ -479,6 +571,25 @@ function registerIpc() {
     const thumb = !(opts && opts.thumb === false);
 
     // Playlist → pecah jadi banyak download (antrean otomatis, paralel)
+    // v1.5.1: link stream hasil resolusi inject-JS browser (Vidio/GoodShort)
+    // → antre langsung tanpa yt-dlp (yt-dlp gagal utk video modern + WAF)
+    if (Array.isArray(opts.directEntries) && opts.directEntries.length) {
+      const ref = (opts.referer && String(opts.referer)) || null;
+      const list = opts.directEntries.slice(0, opts.directEntries.length > 1 ? 200 : 1);
+      let added = 0, lastErr = null;
+      for (const en of list) {
+        if (!en || !isValidHttpUrl(en.url)) { lastErr = 'URL tidak valid'; continue; }
+        const v = await checkStreamUrl(en.url, ref);
+        if (!v.ok) { lastErr = v.reason; continue; }
+        const r = dm.start(v.url, quality, { mode, thumb: false, title: en.outName || null, outName: en.outName || null, referer: ref });
+        if (r && !r.error) added++;
+      }
+      if (added > 0) {
+        if (list.length > 1) send({ type: 'playlist-info', count: added });
+        return { playlist: list.length > 1, count: added };
+      }
+      return { error: 'Link video tidak valid/kedaluwarsa (' + (lastErr || 'tidak diketahui') + '). Buka ulang halamannya di browser aplikasi lalu coba lagi.' };
+    }
     if (isPlaylistUrl(url)) {
       // v1.5.0: Dramaharian — ekspansi episode lewat API situs (bukan yt-dlp)
       if (/dramaharian\.com\//i.test(url)) {

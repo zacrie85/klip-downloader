@@ -1,4 +1,4 @@
-/* ============ KLIP DOWNLOADER v1.5.0 — renderer logic (layout 30/70) ============ */
+/* ============ KLIP DOWNLOADER v1.5.1 — renderer logic (layout 30/70) ============ */
 const api = window.klip;
 const $ = (id) => document.getElementById(id);
 
@@ -16,6 +16,7 @@ const el = {
   loadBar: $('loadBar'), browser: $('browser'),
   btnUseUrl: $('btnUseUrl'), detectChip: $('detectChip'),
   mediaChip: $('mediaChip'), mediaChipUrl: $('mediaChipUrl'), mediaCount: $('mediaCount'),
+  siteChip: $('siteChip'), siteChipTitle: $('siteChipTitle'),
   cardSource: $('cardSource'), toast: $('toast')
 };
 
@@ -25,6 +26,11 @@ let lastAutoUrl = null;
 
 // v1.3.0: daftar media hasil capture browser (terbaru di depan)
 const mediaList = []; // [{url, referer, t}]
+
+// v1.5.1: hasil resolusi stream dari browser built-in (Vidio/GoodShort)
+// {pageUrl, entries:[{url,outName}], title, referer} — null bila belum ada
+let siteResolved = null;
+let siteResolveTimers = [];
 
 /* ---------------- util ---------------- */
 function toast(msg, kind = 'info', ms = 3400) {
@@ -84,7 +90,7 @@ const VIDEO_PATTERNS = [
   // v1.5.0: Dramaharian — URL drama (playlist) atau episode tunggal
   /dramaharian\.com\/(drama|tonton)\/[\w.-]+\/[^/?#]+(\/\d+)?/i,
   // v1.5.0: Vidio — VOD watch/embed, series premier (playlist), live TV
-  /vidio\.com\/(watch|embed)\/\d+-[^/?#]+/i,
+  /vidio\.com\/(watch|embed)\/\d+(?:-[^/?#]+)?/i,
   /vidio\.com\/premier\/\d+\/[^/?#]+/i,
   /vidio\.com\/live\/\d+/i
 ];
@@ -197,12 +203,18 @@ async function startDownload(mode) {
   // v1.3.0: sambungkan referer bila URL berasal dari media capture
   const mi = mediaList.find((m) => m.url === u);
   if (mi && mi.referer) opts.referer = mi.referer;
+  // v1.5.1: stream hasil resolusi browser built-in (Vidio/GoodShort)
+  if (siteResolved && samePageUrl(u, siteResolved.pageUrl)) {
+    opts.directEntries = siteResolved.entries;
+    opts.referer = siteResolved.referer;
+  }
   const r = await api.downloadStart(u, el.qualitySel.value, opts);
   if (r && r.error) { toast('❌ ' + r.error, 'err', 6000); return; }
   if (r && r.playlist) {
-    toast(`📜 Playlist terbaca — ${r.count} video masuk antrean (paralel) 🚀`, 'ok', 5000);
+    toast(`📜 ${r.count} episode masuk antrean — diunduh paralel 🚀`, 'ok', 5000);
   } else {
-    rowFor(r.id, 'Menyiapkan unduhan…');
+    const en = siteResolved && samePageUrl(u, siteResolved.pageUrl) ? siteResolved.entries[0] : null;
+    rowFor(r.id, en ? en.outName : 'Menyiapkan unduhan…');
     toast(mode === 'mp3' ? '🎵 Download MP3 dimulai 🚀' : '⬇ Download video dimulai 🚀', 'ok');
   }
 }
@@ -346,18 +358,21 @@ function handleEvent(evt) {
         r.refs.cancelBtn.textContent = '✕';
         r.refs.cancelBtn.title = 'Tutup baris ini';
       }
-      // v1.3.0 + v1.5.0: panduan khusus situs drama & Vidio
+      // v1.3.0 + v1.5.1: panduan khusus situs drama & Vidio/GoodShort
       const u = (el.urlInput.value || '').toLowerCase();
       const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com|bilibili\.tv|dramaharian\.com)/.test(u);
       const bili = /bilibili\.tv/.test(u);
       const vidio = /vidio\.com/.test(u);
+      const gshort = /goodshort\.com/.test(u);
       toast(vidio
-        ? '❌ Vidio gagal diunduh. Konten premium butuh login: buka vidio.com di BROWSER aplikasi → login → coba lagi. Live TV: tekan Play lalu pakai chip 🎯'
-        : dramaSite && bili
-          ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-          : dramaSite
-            ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-            : '❌ ' + (evt.message || 'Download gagal'), 'err', 8000);
+        ? '❌ Vidio gagal diunduh. Solusi: buka dulu videonya di BROWSER aplikasi (link disiapkan otomatis ±7 detik) lalu klik tombol 📺. Konten premium → login vidio.com di browser ini dulu. Konten DRM tidak bisa diunduh.'
+        : gshort
+          ? '❌ GoodShort gagal via URL langsung (dilindungi WAF). Solusi: buka episode-nya di BROWSER aplikasi → tunggu chip 📺 "Link video siap" → klik → download otomatis. Atau tekan Play lalu pakai chip 🎯'
+          : dramaSite && bili
+            ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+            : dramaSite
+              ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+              : '❌ ' + (evt.message || 'Download gagal'), 'err', 9000);
       appendLog((evt.message || 'ERROR'), 'error');
       break;
     }
@@ -480,6 +495,9 @@ function onNav(url, inPage) {
   el.addrInput.value = url;
   clearTimeout(navTimer);
   navTimer = setTimeout(() => checkDetect(url), inPage ? 700 : 150);
+  // v1.5.1: halaman Vidio/GoodShort → siapkan link stream otomatis
+  if (getResolveSite(url)) scheduleSiteResolve(url);
+  else clearSiteState();
 }
 
 function checkDetect(url) {
@@ -488,6 +506,205 @@ function checkDetect(url) {
   lastAutoUrl = url;
   sendToSource(url, true);
 }
+
+/* -------- v1.5.1: resolusi otomatis stream dari browser built-in -------- */
+// Vidio modern tidak punya playlist publik (yt-dlp → 404) dan API GoodShort
+// diblokir WAF bila diakses di luar halaman. Solusi: inject JS ke halaman
+// di browser built-in → minta link stream PERSIS seperti player web situs
+// (cookie + fingerprint asli) → validasi di main → antre download.
+const VIDIO_RESOLVE_JS = `(async () => {
+  const out = { ok:false, candidates:[], id:null, kind:null };
+  try {
+    const m = location.pathname.match(/\\/(?:watch|embed)\\/(\\d+)/) || location.pathname.match(/\\/live\\/(\\d+)/);
+    if (!m) return out;
+    out.id = m[1];
+    out.kind = /^\\/live\\//.test(location.pathname) ? 'live' : 'video';
+    const id = out.id;
+    const abs = (u) => { try { return new URL(u, location.origin).href; } catch (e) { return null; } };
+    const csrfEl = document.querySelector('meta[name="csrf-token"]');
+    const H = csrfEl && csrfEl.content ? { 'X-CSRF-Token': csrfEl.content } : {};
+    // 1) endpoint token player modern (dipakai player web vidio)
+    try {
+      const r = await fetch('/live/' + id + '/tokens', { method:'POST', credentials:'include', headers:H });
+      if (r.ok) {
+        const j = await r.json().catch(() => ({}));
+        if (j && j.hls_url) out.candidates.push(abs(j.hls_url));
+        if (j && j.token) {
+          out.candidates.push(abs('/videos/' + id + '/playlist.m3u8?' + j.token));
+          out.candidates.push(abs('/live/' + id + '/tokens?' + j.token));
+        }
+        if (j && j.dash_url) out.candidates.push(abs(j.dash_url));
+      }
+    } catch (e) {}
+    // 2) interactions_stream — premium dgn session login
+    try {
+      const r2 = await fetch('/interactions_stream.json?video_id=' + id + '&type=' + (out.kind === 'live' ? 'livestreamings' : 'videos'), { credentials:'include' });
+      if (r2.ok) {
+        const j2 = await r2.json().catch(() => ({}));
+        if (j2 && j2.source) out.candidates.push(abs(j2.source));
+        if (j2 && j2.source_dash) out.candidates.push(abs(j2.source_dash));
+      }
+    } catch (e) {}
+    // 3) playlist publik lama (video lama masih jalan)
+    out.candidates.push(abs('/videos/' + id + '/playlist.m3u8'));
+    out.candidates.push('https://api.vidio.com/videos/' + id + '/playlist.m3u8');
+    out.candidates = out.candidates.filter(Boolean);
+    out.ok = out.candidates.length > 0;
+  } catch (e) { out.err = String((e && e.message) || e); }
+  return out;
+})()`;
+
+// GoodShort — episode tunggal (/episode/{book}/{chapter})
+const GOODSHORT_EP_RESOLVE_JS = `(async () => {
+  const out = { ok:false, entries:[], title:null };
+  try {
+    const m = location.pathname.match(/\\/episode\\/([a-z0-9-]+)\\/([a-z0-9-]+)/i);
+    if (!m) return out;
+    const bookId = m[1].split('-').pop();
+    const chapterId = m[2].split('-').pop();
+    const r = await fetch('/hwycreels/chapter/detail', {
+      method:'POST', credentials:'include',
+      headers: { 'Content-Type':'application/json;charset=UTF-8', 'platform':'WEB', 'currentLanguage': (localStorage.getItem('currentLanguage') || 'en') },
+      body: JSON.stringify({ bookId:String(bookId), chapterId:String(chapterId), num:16 })
+    });
+    if (r.ok) {
+      const j = await r.json().catch(() => ({}));
+      if (j && j.status === 0 && j.data && j.data.m3u8Path) {
+        out.entries.push({ url: j.data.m3u8Path, ep: 1 });
+        if (j.data.book && j.data.book.name) out.title = j.data.book.name;
+        out.ok = true;
+      }
+    }
+  } catch (e) { out.err = String((e && e.message) || e); }
+  return out;
+})()`;
+
+// GoodShort — halaman drama (/drama/{book}) → semua episode yang punya m3u8Path
+const GOODSHORT_DRAMA_RESOLVE_JS = `(async () => {
+  const out = { ok:false, entries:[], title:null };
+  try {
+    const m = location.pathname.match(/\\/drama\\/([a-z0-9-]+)/i);
+    if (!m) return out;
+    const bookId = m[1].split('-').pop();
+    const r = await fetch('/hwycreels/chapter/page', {
+      method:'POST', credentials:'include',
+      headers: { 'Content-Type':'application/json;charset=UTF-8', 'platform':'WEB', 'currentLanguage': (localStorage.getItem('currentLanguage') || 'en') },
+      body: JSON.stringify({ bookId:String(bookId), current:1, size:500 })
+    });
+    if (r.ok) {
+      const j = await r.json().catch(() => ({}));
+      const recs = j && j.status === 0 && j.data && Array.isArray(j.data.records) ? j.data.records : [];
+      recs.forEach((rec, i) => { if (rec && rec.m3u8Path) out.entries.push({ url: rec.m3u8Path, ep: i + 1 }); });
+      if (j && j.status === 0 && j.data && j.data.book && j.data.book.name) out.title = j.data.book.name;
+      out.ok = out.entries.length > 0;
+    }
+  } catch (e) { out.err = String((e && e.message) || e); }
+  return out;
+})()`;
+
+// Deteksi situs dari URL — {kind:'vidio'|'gs-ep'|'gs-drama', referer} | null
+function getResolveSite(u) {
+  try {
+    const x = new URL(u);
+    if (/(^|\.)vidio\.com$/i.test(x.hostname)) {
+      if (/\/(watch|embed|live)\/\d+/.test(x.pathname)) return { kind: 'vidio', referer: 'https://www.vidio.com/' };
+      return null;
+    }
+    if (/(^|\.)goodshort\.com$/i.test(x.hostname)) {
+      if (/\/episode\/[a-z0-9-]+\/[a-z0-9-]+/i.test(x.pathname)) return { kind: 'gs-ep', referer: 'https://www.goodshort.com/' };
+      if (/\/drama\/[a-z0-9-]+/i.test(x.pathname)) return { kind: 'gs-drama', referer: 'https://www.goodshort.com/' };
+      return null;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function siteInjectJs(kind) {
+  if (kind === 'vidio') return VIDIO_RESOLVE_JS;
+  if (kind === 'gs-ep') return GOODSHORT_EP_RESOLVE_JS;
+  if (kind === 'gs-drama') return GOODSHORT_DRAMA_RESOLVE_JS;
+  return null;
+}
+
+function samePageUrl(a, b) {
+  try {
+    return new URL(a).pathname.replace(/\/$/, '') === new URL(b).pathname.replace(/\/$/, '');
+  } catch (e) { return false; }
+}
+
+function clearSiteState() {
+  siteResolveTimers.forEach(clearTimeout);
+  siteResolveTimers = [];
+  siteResolved = null;
+  el.siteChip.classList.add('hidden');
+}
+
+function scheduleSiteResolve(pageUrl) {
+  clearSiteState();
+  // token/API situs biasanya siap segera setelah halaman terbuka — coba beberapa kali
+  [1200, 3500, 7000].forEach((t) => {
+    siteResolveTimers.push(setTimeout(() => tryResolveSite(pageUrl), t));
+  });
+}
+
+async function tryResolveSite(pageUrl) {
+  const site = getResolveSite(pageUrl);
+  if (!site) return;
+  let wbUrl = '';
+  try { wbUrl = wb.getURL() || ''; } catch (e) {}
+  if (!wbUrl || !samePageUrl(wbUrl, pageUrl)) return; // halaman sudah berganti
+  if (siteResolved) return;                            // sudah berhasil sebelumnya
+  const js = siteInjectJs(site.kind);
+  if (!js) return;
+  let res = null;
+  try { res = await wb.executeJavaScript(js, false); } catch (e) { return; }
+
+  // vidio: kandidat URL divalidasi satu per satu di main
+  if (site.kind === 'vidio') {
+    if (!res || !res.ok || !Array.isArray(res.candidates) || !res.candidates.length) return;
+    let title = '';
+    try { title = wb.getTitle() || ''; } catch (e) {}
+    let r = null;
+    try { r = await api.resolveVidio({ candidates: res.candidates, title }); } catch (e) { return; }
+    let nowUrl = '';
+    try { nowUrl = wb.getURL() || ''; } catch (e) {}
+    if (!samePageUrl(nowUrl, pageUrl)) return;
+    if (r && r.ok && r.url) {
+      siteResolved = { pageUrl, entries: [{ url: r.url, outName: r.outName || title }], title: r.outName || title, referer: site.referer };
+      el.siteChipTitle.textContent = siteResolved.title;
+      el.siteChip.classList.remove('hidden');
+      toast('📺 Link video Vidio siap — klik tombol 📺 hijau untuk langsung mengunduh!', 'ok', 5200);
+    }
+    return;
+  }
+
+  // goodshort: 1 atau banyak episode; entri pertama divalidasi di main
+  if (!res || !res.ok || !Array.isArray(res.entries) || !res.entries.length) return;
+  let title2 = res.title || '';
+  if (!title2) { try { title2 = (wb.getTitle() || '').replace(/\s*[|\u2013\u2014-]\s*GoodShort.*$/i, ''); } catch (e) {} }
+  let r2 = null;
+  try { r2 = await api.resolveGoodshort({ entries: res.entries, title: title2 }); } catch (e) { return; }
+  let nowUrl2 = '';
+  try { nowUrl2 = wb.getURL() || ''; } catch (e) {}
+  if (!samePageUrl(nowUrl2, pageUrl)) return;
+  if (r2 && r2.ok && Array.isArray(r2.entries) && r2.entries.length) {
+    siteResolved = { pageUrl, entries: r2.entries, title: r2.outName || title2, referer: site.referer };
+    const n = r2.entries.length;
+    el.siteChipTitle.textContent = n > 1 ? `${siteResolved.title} — ${n} episode siap` : siteResolved.title;
+    el.siteChip.classList.remove('hidden');
+    toast(n > 1
+      ? `📺 ${n} episode GoodShort siap — klik tombol 📺 hijau untuk mengunduh semuanya!`
+      : '📺 Link episode GoodShort siap — klik tombol 📺 hijau untuk mengunduh!', 'ok', 5200);
+  }
+}
+
+// klik chip 📺 → isi URL + langsung mulai download (1 episode atau semua)
+el.siteChip.addEventListener('click', async () => {
+  if (!siteResolved) return;
+  el.urlInput.value = siteResolved.pageUrl;
+  el.cardSource.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  await startDownload('video');
+});
 
 el.btnUseUrl.addEventListener('click', () => {
   let u = '';
