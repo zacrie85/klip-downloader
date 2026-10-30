@@ -1,4 +1,4 @@
-/* ============ KLIP DOWNLOADER v1.4.0 — renderer logic (layout 30/70) ============ */
+/* ============ KLIP DOWNLOADER v1.5.0 — renderer logic (layout 30/70) ============ */
 const api = window.klip;
 const $ = (id) => document.getElementById(id);
 
@@ -80,7 +80,13 @@ const VIDEO_PATTERNS = [
   //   /id/play/{season}/{ep} → 1 episode · /id/play/{season} → 1 drama (playlist)
   //   /id/video/{aid} → video tunggal
   /bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?video\/\d+/i,
-  /bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?play\/\d+(?:\/\d+)?/i
+  /bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?play\/\d+(?:\/\d+)?/i,
+  // v1.5.0: Dramaharian — URL drama (playlist) atau episode tunggal
+  /dramaharian\.com\/(drama|tonton)\/[\w.-]+\/[^/?#]+(\/\d+)?/i,
+  // v1.5.0: Vidio — VOD watch/embed, series premier (playlist), live TV
+  /vidio\.com\/(watch|embed)\/\d+-[^/?#]+/i,
+  /vidio\.com\/premier\/\d+\/[^/?#]+/i,
+  /vidio\.com\/live\/\d+/i
 ];
 function isVideoUrl(u) { return VIDEO_PATTERNS.some((r) => r.test(u || '')); }
 
@@ -323,6 +329,11 @@ function handleEvent(evt) {
       refreshList();
       break;
     }
+    case 'dh-info': {
+      // v1.5.0: info progres ekspansi Dramaharian
+      appendLog('[Dramaharian] ' + evt.line, 'info');
+      break;
+    }
     case 'error': {
       const r = rows.get(evt.id);
       if (r) {
@@ -335,15 +346,18 @@ function handleEvent(evt) {
         r.refs.cancelBtn.textContent = '✕';
         r.refs.cancelBtn.title = 'Tutup baris ini';
       }
-      // v1.3.0: panduan khusus situs drama yang butuh media capture
+      // v1.3.0 + v1.5.0: panduan khusus situs drama & Vidio
       const u = (el.urlInput.value || '').toLowerCase();
-      const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com|bilibili\.tv)/.test(u);
+      const dramaSite = /(flickreels\.net|shortical\.com|goodshort\.com|bilibili\.tv|dramaharian\.com)/.test(u);
       const bili = /bilibili\.tv/.test(u);
-      toast(dramaSite && bili
-        ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-        : dramaSite
-          ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
-          : '❌ ' + (evt.message || 'Download gagal'), 'err', 8000);
+      const vidio = /vidio\.com/.test(u);
+      toast(vidio
+        ? '❌ Vidio gagal diunduh. Konten premium butuh login: buka vidio.com di BROWSER aplikasi → login → coba lagi. Live TV: tekan Play lalu pakai chip 🎯'
+        : dramaSite && bili
+          ? '❌ BiliBili TV gagal diunduh (kemungkinan konten VIP/region). Coba: buka episode di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+          : dramaSite
+            ? '❌ Situs drama ini video-nya dinamis. Buka episode-nya di BROWSER aplikasi → tekan Play → klik chip 🎯 "Video terdeteksi" di menu kiri'
+            : '❌ ' + (evt.message || 'Download gagal'), 'err', 8000);
       appendLog((evt.message || 'ERROR'), 'error');
       break;
     }

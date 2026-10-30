@@ -2,9 +2,9 @@
 
 **Downloader video + browser built-in — 100% lokal, gratis, tanpa batas.**
 
-![Version](https://img.shields.io/badge/version-1.4.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
+![Version](https://img.shields.io/badge/version-1.5.0-green) ![Platform](https://img.shields.io/badge/platform-Windows%20x64-blue)
 
-Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, **BiliBili TV, FlickReels, Shortical, GoodShort**, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
+Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, TikTok, Instagram, Facebook, X/Twitter, Vimeo, Google Drive, Dailymotion, **BiliBili TV, Vidio, Dramaharian, FlickReels, Shortical, GoodShort**, dan **1000+ situs lain** — dilengkapi **browser built-in** sehingga kamu bisa browsing, menonton, dan langsung mengunduh dalam satu aplikasi.
 
 ---
 
@@ -14,7 +14,9 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 |---|---|
 | 🎯 **MEDIA CAPTURE — SITUS DRAMA** | **v1.3.0** — buka episode di **FlickReels / Shortical / GoodShort** di browser aplikasi, tekan **Play** → video terdeteksi otomatis (chip hijau 🎯) → klik → download. Bekerja juga untuk situs apa pun yang video-nya dinamis! |
 | ✂️ **URL Episode Langsung** | **v1.3.0** — link episode FlickReels (dan kebanyakan situs) bisa langsung ditempel & diunduh tanpa buka browser. |
-| 📺 **BILIBILI TV (SHORT DRAMA)** | **BARU v1.4.0** — tempel URL episode `bilibili.tv/id/play/{drama}/{ep}` atau URL dramanya `bilibili.tv/id/play/{drama}` → **seluruh episode otomatis masuk antrean paralel** (contoh: 1 drama = 72 episode). Juga mendukung `bilibili.tv/id/video/{id}`. Deteksi otomatis saat browsing di browser aplikasi. |
+| 📺 **BILIBILI TV (SHORT DRAMA)** | **v1.4.0** — tempel URL episode `bilibili.tv/id/play/{drama}/{ep}` atau URL dramanya `bilibili.tv/id/play/{drama}` → **seluruh episode otomatis masuk antrean paralel** (contoh: 1 drama = 72 episode). Juga mendukung `bilibili.tv/id/video/{id}`. Deteksi otomatis saat browsing di browser aplikasi. |
+| 🎭 **DRAMAHARIAN (SHORT DRAMA)** | **BARU v1.5.0** — tempel URL drama `dramaharian.com/drama/{provider}/{id}` → **semua episode gratis otomatis masuk antrean paralel** dengan nama file rapi (`Judul Drama - EP 1.mp4`, dst). Mendukung semua provider (dramabite, dramawave, flextv, flickreels, freereels, dll). URL episode tunggal `/tonton/…` juga didukung. |
+| 📺 **VIDIO.COM** | **BARU v1.5.0** — download VOD `vidio.com/watch/…` & `embed/…`, series `premier/…` (seluruh episode otomatis), dan live TV. Konten premium: **login dulu vidio.com di browser aplikasi** → cookie dipakai otomatis oleh engine. Deteksi otomatis saat browsing. |
 | 🖥 **Layout Baru 30/70** | Kolom kiri 30% berisi semua menu (berurutan atas–bawah), kolom kanan 70% penuh untuk browser. |
 | 🌐 **Browser Built-in** | Buka YouTube / situs mana pun langsung dari aplikasi. Tonton video di dalam aplikasi. |
 | 🎯 **Deteksi Otomatis URL** | Saat membuka halaman video (YouTube, TikTok, dll.), URL otomatis terisi ke menu Sumber Video. |
@@ -31,7 +33,7 @@ Klip Downloader adalah aplikasi Windows untuk **mengunduh video** dari YouTube, 
 
 ## 📦 Instalasi
 
-1. Unduh `Klip-Downloader-Setup-1.2.0.exe` dari [halaman Releases](../../releases).
+1. Unduh `Klip-Downloader-Setup-1.5.0.exe` dari [halaman Releases](../../releases).
 2. Jika Windows SmartScreen muncul (karena aplikasi belum ditandatangani), klik **More info → Run anyway**.
 3. Ikuti wizard instalasi, selesai!
 
@@ -63,6 +65,18 @@ Tempel link playlist (`youtube.com/playlist?list=…`) atau channel (`youtube.co
 2. Tempel **URL drama** (`bilibili.tv/id/play/2130147`) → semua episode (bisa puluhan) otomatis masuk antrean paralel; atau tempel **URL satu episode** (`bilibili.tv/id/play/2130147/13810256`) untuk download episode itu saja.
 3. Klik **⬇ Video** — selesai! Konten VIP/berbayar tetap hanya bisa diakses sesuai akunmu.
 
+### 🎭 Dramaharian (Short Drama) — v1.5.0
+1. Buka `dramaharian.com` di browser aplikasi, pilih drama yang kamu mau.
+2. Salin URL dramanya (`dramaharian.com/drama/dramabite/10297`) → tempel di Sumber Video → klik **⬇ Video**.
+3. **Semua episode gratis** otomatis dibaca lewat API situs lalu masuk antrean paralel — episode berbayar/terkunci dilewati otomatis. Nama file: `Judul Drama - EP 1.mp4`, `Judul Drama - EP 2.mp4`, dst.
+4. Mau 1 episode saja? Buka episode-nya, salin URL `/tonton/{provider}/{id}/{ep}` lalu tempel.
+
+### 📺 Vidio.com — v1.5.0
+1. Tempel URL video (`vidio.com/watch/{id}-{slug}` atau `embed/…`) → klik **⬇ Video**. Konten gratis langsung terunduh.
+2. **Konten premium / berlangganan**: buka `vidio.com` di **browser aplikasi** → **login** ke akun Vidio-mu → salin URL videonya → download. Cookie login dipakai otomatis oleh engine (tersimpan lokal di komputarmu).
+3. **Series (`vidio.com/premier/…`)** → seluruh episode otomatis masuk antrean paralel.
+4. **Live TV**: tonton dulu di browser aplikasi → bila yt-dlp gagal, tekan Play lalu pakai chip 🎯 "Video terdeteksi" di menu kiri.
+
 ### 💡 Tips YouTube
 Bila YouTube menampilkan *"Sign in to confirm you're not a bot"* saat download: **login dulu ke YouTube lewat browser built-in** di aplikasi, lalu coba download lagi. Cookie login dipakai otomatis oleh engine dan tersimpan hanya di komputarmu.
 
@@ -88,13 +102,29 @@ Build Windows di Linux butuh: `NODE_OPTIONS="--require ./scripts/patch-macos-che
 ## ⚖️ Catatan
 
 - Gunakan hanya untuk konten yang kamu punya izin untuk mengunduh.
-- Aplikasi ini tidak berafiliasi dengan YouTube, TikTok, Instagram, Facebook, BiliBili, atau platform lainnya.
+- Aplikasi ini tidak berafiliasi dengan YouTube, TikTok, Instagram, Facebook, BiliBili, Vidio, Dramaharian, atau platform lainnya.
 
 ## 📄 Lisensi
 
 MIT © 2026 [zacrie85](https://github.com/zacrie85)
 
 ## 🗒 Changelog
+
+### v1.5.0
+- **Dramaharian (dramaharian.com)** — download short drama lewat API resmi situs:
+  - URL drama `…/drama/{provider}/{id}` → semua episode gratis otomatis masuk antrean paralel (maks 200).
+  - URL episode `…/tonton/{provider}/{id}/{ep}` → download episode tunggal.
+  - Nama file rapi otomatis: `Judul Drama - EP {n}.mp4`.
+  - Semua provider didukung (dramabite, dramawave, flextv, flickreels, freereels, dll).
+  - Episode berbayar/terkunci dilewati otomatis + info progres di log.
+- **Vidio (vidio.com)** — download VOD, series, dan live TV:
+  - VOD `…/watch/{id}-{slug}` & `…/embed/{id}-{slug}` via extractor Vidio yt-dlp.
+  - Series `…/premier/{id}/{slug}` → seluruh episode otomatis (playlist paralel).
+  - Live TV `…/live/{id}` + fallback media capture.
+  - Konten premium: login vidio.com di browser built-in → cookie otomatis dipakai engine.
+- Deteksi otomatis URL untuk kedua situs saat browsing di browser aplikasi.
+- Panduan error khusus Vidio (login premium/live) di toast.
+- Test: `scripts/test_v15.js` (31 pass) + `scripts/test_v15_e2e.js` (API live + download nyata).
 
 ### v1.4.0
 - **BiliBili TV (bilibili.tv)** — download video & short drama dari bilibili.tv (semua bahasa: /id/, /en/, dll.):

@@ -1,5 +1,5 @@
 /**
- * KLIP DOWNLOADER v1.4.0
+ * KLIP DOWNLOADER v1.5.0
  * Downloader video + browser built-in + media capture untuk situs short drama.
  * Author: zacrie85
  */
@@ -258,12 +258,149 @@ function isPlaylistUrl(u) {
   //   bilibili.tv/id/play/2130147          → playlist (seluruh episode drama)
   //   bilibili.tv/id/play/2130147/13810256 → episode tunggal, bukan playlist
   if (/bilibili\.tv\/(?:[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,6})?\/)?play\/\d+\/?([?#]|$)/i.test(u)) return true;
+  // v1.5.0: URL drama Dramaharian TANPA ep → seluruh episode (yang gratis) masuk antrean
+  //   dramaharian.com/drama/{provider}/{bookId}           → playlist
+  //   dramaharian.com/tonton/{provider}/{bookId}/{ep}     → episode tunggal
+  if (/dramaharian\.com\/drama\/[\w.-]+\/[^/?#]+\/?([?#]|$)/i.test(u)) return true;
   return (
     /[?&]list=/i.test(u) ||
     /youtube\.com\/playlist\?/i.test(u) ||
     /youtube\.com\/channel\//i.test(u) ||
     /youtube\.com\/@[\w.-]+(\/videos?)?\/?$/i.test(u)
   );
+}
+
+// ---------- v1.5.0: Dramaharian (dramaharian.com) ----------
+// Situs short drama agregator multi-provider (dramabite, dramawave, flextv,
+// flickreels, freereels, dll). Video diambil lewat API resmi situs:
+//   GET /api/browse/chapters/{bookId}?provider={prov}  → daftar episode
+//   GET /api/content/watch/{bookId}/{ep}?provider={prov} → URL .m3u8
+// Header X-Device-Id (UUID stabil) dibutuhkan utk kuota tamu (~100 episode).
+
+const DRAMAHARIAN_RE = /^https?:\/\/(?:www\.)?dramaharian\.com\/(drama|tonton)\/([\w.-]+)\/([^/?#]+)(?:\/?(\d+)?(?:[?#].*)?)?$/i;
+
+// Sanitasi nama file Windows (sama gaya dgn --windows-filenames)
+function safeFilename(s, max = 90) {
+  const clean = String(s || '')
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return (clean.length > max ? clean.slice(0, max).trim() : clean) || 'video';
+}
+
+// UUID stabil per-installasi (disimpan di settings.json)
+function dramaharianDeviceId() {
+  if (!settings.drhDevice) {
+    settings.drhDevice = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+    saveSettings();
+  }
+  return settings.drhDevice;
+}
+
+function httpGetJson(url, headers, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const lib = u.protocol === 'https:' ? require('https') : require('http');
+    const req = lib.get(u, {
+      headers: Object.assign({
+        'Accept': 'application/json',
+        'User-Agent': app.userAgentFallback,
+        'Accept-Language': 'id-ID,id;q=0.9'
+      }, headers || {})
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume();
+        return httpGetJson(new URL(res.headers.location, u).href, headers, timeoutMs).then(resolve, reject);
+      }
+      let out = '';
+      res.on('data', (d) => { out += d.toString(); });
+      res.on('end', () => {
+        try { resolve(JSON.parse(out)); } catch (e) { reject(new Error('respon JSON tidak valid')); }
+      });
+    });
+    req.on('error', reject);
+    const to = setTimeout(() => { try { req.destroy(new Error('timeout')); } catch (e) {} }, timeoutMs);
+    req.on('close', () => clearTimeout(to));
+  });
+}
+
+// URL m3u8 untuk 1 episode (atau null bila episode berbayar/terkunci)
+async function dramaharianEpisodeUrl(provider, bookId, ep) {
+  const api = `https://dramaharian.com/api/content/watch/${encodeURIComponent(bookId)}/${ep}?provider=${encodeURIComponent(provider)}`;
+  const j = await httpGetJson(api, { 'X-Device-Id': dramaharianDeviceId() });
+  const d = j && j.data;
+  const vid = d && (d.video || (d.chapter && d.chapter.video));
+  return (vid && (vid.hls || vid.default || vid.mp4)) || null;
+}
+
+// Ekspansi URL dramaharian → daftar {url, title, outName}
+//   /drama/{prov}/{bookId}        → SEMUA episode gratis
+//   /tonton/{prov}/{bookId}/{ep}  → episode tunggal itu saja
+async function expandDramaharian(url, sendEvt) {
+  const m = String(url).match(DRAMAHARIAN_RE);
+  if (!m) return null;
+  const [, mode, provider, bookId, epStr] = m;
+  const dh = (msg) => { try { sendEvt({ type: 'dh-info', line: msg }); } catch (e) {} };
+
+  // Judul drama dari og:title halaman SSR (fallback: provider+bookId)
+  let dramaTitle = `${provider} ${bookId}`;
+  try {
+    const html = await new Promise((resolve) => {
+      const u = new URL(`https://dramaharian.com/drama/${provider}/${encodeURIComponent(bookId)}`);
+      require('https').get(u, { headers: { 'User-Agent': app.userAgentFallback } }, (res) => {
+        let out = '';
+        res.on('data', (d) => { out += d.toString(); });
+        res.on('end', () => resolve(out));
+      }).on('error', () => resolve(''));
+      setTimeout(() => resolve(''), 12000);
+    });
+    const t = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
+    if (t) dramaTitle = t[1].replace(/\s*—\s*Nonton Drama.*$/i, '').replace(/\s*\|\s*Dramaharian.*$/i, '').trim();
+  } catch (e) {}
+  const baseName = safeFilename(dramaTitle);
+
+  // Episode tunggal dari /tonton/...
+  if (mode === 'tonton' || epStr) {
+    const ep = parseInt(epStr, 10) || 1;
+    dh(`Mengambil link episode ${ep} …`);
+    const vurl = await dramaharianEpisodeUrl(provider, bookId, ep);
+    if (!vurl) throw new Error(`Episode ${ep} tidak tersedia (kemungkinan episode berbayar/terkunci).`);
+    return [{ url: vurl, title: `${dramaTitle} — EP ${ep}`, outName: `${baseName} - EP ${ep}` }];
+  }
+
+  // Drama penuh → ambil daftar episode, saring yang gratis
+  dh('Membaca daftar episode …');
+  const chap = await httpGetJson(
+    `https://dramaharian.com/api/browse/chapters/${encodeURIComponent(bookId)}?provider=${encodeURIComponent(provider)}`,
+    { 'X-Device-Id': dramaharianDeviceId() }
+  );
+  const chapters = (chap && chap.data) || [];
+  if (!chapters.length) throw new Error('Daftar episode kosong — cek URL drama.');
+  const freeEps = chapters
+    .filter((c) => c && Number(c.isCharge) === 0)
+    .map((c) => parseInt(c.chapterId, 10))
+    .filter((n) => Number.isFinite(n) && n > 0)
+    .sort((a, b) => a - b);
+  const locked = chapters.length - freeEps.length;
+  if (!freeEps.length) throw new Error('Semua episode drama ini berbayar/terkunci.');
+
+  dh(`${freeEps.length} episode gratis terdeteksi${locked ? ` (${locked} episode berbayar dilewati)` : ''} — mengambil link video …`);
+  const entries = [];
+  let fail = 0;
+  for (const ep of freeEps.slice(0, 200)) {
+    try {
+      const vurl = await dramaharianEpisodeUrl(provider, bookId, ep);
+      if (vurl) entries.push({ url: vurl, title: `${dramaTitle} — EP ${ep}`, outName: `${baseName} - EP ${ep}` });
+      else fail++;
+    } catch (e) { fail++; }
+    if (entries.length && entries.length % 10 === 0) dh(`Progres: ${entries.length} link siap …`);
+  }
+  if (!entries.length) throw new Error('Tidak ada episode gratis yang bisa diambil saat ini (kuota tamu mungkin habis — coba lagi nanti).');
+  if (fail) dh(`${fail} episode dilewati (terkunci/kuota).`);
+  return entries;
 }
 
 function spawnEnv() {
@@ -343,6 +480,25 @@ function registerIpc() {
 
     // Playlist → pecah jadi banyak download (antrean otomatis, paralel)
     if (isPlaylistUrl(url)) {
+      // v1.5.0: Dramaharian — ekspansi episode lewat API situs (bukan yt-dlp)
+      if (/dramaharian\.com\//i.test(url)) {
+        send({ type: 'playlist-start', url });
+        try {
+          const entries = await expandDramaharian(url, send);
+          if (entries && entries.length) {
+            let added = 0;
+            for (const en of entries.slice(0, 200)) {
+              const r = dm.start(en.url, quality, { mode, thumb: false, title: en.title, outName: en.outName, referer: 'https://dramaharian.com/' });
+              if (r && !r.error) added++;
+            }
+            send({ type: 'playlist-info', count: added });
+            return { playlist: true, count: added };
+          }
+          return { error: 'Tidak ada episode yang bisa diambil dari URL ini.' };
+        } catch (err) {
+          return { error: 'Dramaharian: ' + err.message };
+        }
+      }
       send({ type: 'playlist-start', url });
       try {
         const entries = await expandPlaylist(url);
